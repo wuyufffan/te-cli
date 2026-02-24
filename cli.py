@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
-TE CLI 主入口
+TE CLI - 命令行入口模块
+
+这是 TE 开发工具的命令行入口，负责解析参数并路由到相应的功能模块。
 """
 import argparse
 import logging

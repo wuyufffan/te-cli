@@ -1,60 +1,60 @@
 # te-cli
 
-TransformerEngine (TE) Development Toolkit for AMD ROCm/HIP Platform.
+TransformerEngine (TE) 开发工具集，专为 AMD ROCm/HIP 平台设计。
 
-## Features
+## 特性
 
-- 🔧 One-command build system (Python/C++/Full)
-- 🧪 Test runner (L0/L1 tests)
-- 📊 Process management (view/kill tasks)
-- ✅ Environment dependency checking
-- 📝 Configurable logging system
+- 🔧 一键编译系统（Python/C++/全量）
+- 🧪 测试运行器（L0/L1 测试）
+- 📊 进程管理（查看/终止任务）
+- ✅ 环境依赖检查
+- 📝 可配置日志系统
 
-## Installation
+## 安装
 
-### Standalone Installation
+### 独立安装
 
 ```bash
 git clone https://github.com/wuyufffan/te-cli.git
 cd te-cli
-pip install -e .  # or ./install.sh
+./install.sh
 ```
 
-### As Part of my_linux_config
+### 作为 my_linux_config 的一部分安装
 
 ```bash
 cd ~/my_linux_config
 ./install.sh --with-te
 ```
 
-## Usage
+## 使用方法
 
 ```bash
-# First run - configure TE_PATH
+# 首次运行 - 配置 TE 路径
 te --help
 
-# Build commands
-te -b -c              # Build Python (incremental)
-te -b -c -d           # Build Python (clean)
-te -b -t              # Build C++ tests
-te -b -r              # Rebuild
+# 编译命令
+te -b -c              # Python 增量编译
+te -b -c -d           # Python 全量编译（clean）
+te -b -t              # C++ 测试编译
+te -b -r              # 重建
 
-# Test commands
-te -0 -c              # L0 C++ unit tests
-te -0 -t              # L0 PyTorch tests
-te -1 -t              # L1 distributed tests
+# 测试命令
+te -0 -c              # L0 C++ 单元测试
+te -0 -t              # L0 PyTorch 测试
+te -1 -t              # L1 分布式测试
 
-# Process management
-te -p                 # View running tasks
-te -s                 # Check environment status
+# 进程管理
+te -p                 # 查看运行中的任务
+te -s                 # 检查环境状态
 
-# View logs
-te -b -c -l           # View build log
+# 查看日志
+te -b -c -l           # 查看编译日志
 ```
 
-## Configuration
+## 配置
 
-Configuration is stored in `~/.te_config.json`:
+配置保存在 `~/.te_config.json`：
 
 ```json
 {
@@ -62,29 +62,29 @@ Configuration is stored in `~/.te_config.json`:
 }
 ```
 
-## Requirements
+## 系统要求
 
 - Python 3.10+
 - CMake 3.20+
 - Ninja
-- AMD ROCm/DTK 25.04.2 or 26.04
+- AMD ROCm/DTK 25.04.2 或 26.04
 
-## Structure
+## 项目结构
 
 ```
 te-cli/
-├── cli.py              # CLI entry point
-├── config_manager.py   # Configuration management
-├── install_config.py   # Installation configuration
-├── logger.py           # Logging system
-├── env_checker.py      # Environment checking
-├── build_helpers.py    # Build functionality
-├── process_helpers.py  # Process management
-├── test_helpers.py     # Test execution
-├── utils_helpers.py    # Utility functions
-└── common_utils.py     # System command wrappers
+├── cli.py              # 命令行入口
+├── config_manager.py   # 配置管理
+├── install_config.py   # 安装配置
+├── logger.py           # 日志系统
+├── env_checker.py      # 环境检查
+├── build_helpers.py    # 编译功能
+├── process_helpers.py  # 进程管理
+├── test_helpers.py     # 测试执行
+├── utils_helpers.py    # 工具函数
+└── common_utils.py     # 系统命令封装
 ```
 
-## License
+## 许可证
 
 MIT License
