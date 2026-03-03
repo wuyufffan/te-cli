@@ -11,6 +11,9 @@ from pathlib import Path
 from typing import Optional
 
 
+DEFAULT_TE_PATH = "/workspace/TransformerEngine"
+
+
 def get_config_path() -> Path:
     """获取配置文件路径"""
     # 允许通过环境变量覆盖（用于测试）
@@ -77,13 +80,23 @@ def prompt_for_te_path() -> str:
     print("Please enter the path to your TransformerEngine source directory.")
     print("Example: /home/username/TransformerEngine")
     print()
+
+    default_is_valid, _ = validate_te_path(DEFAULT_TE_PATH)
+    if default_is_valid:
+        print(f"Detected default TE_PATH: {DEFAULT_TE_PATH}")
+        print("Using detected path automatically.")
+        return DEFAULT_TE_PATH
+    else:
+        print(f"Default TE_PATH not found: {DEFAULT_TE_PATH}")
+        print("Please input TE_PATH manually.")
+        print()
     
     while True:
         try:
             te_path = input("TE_PATH: ").strip()
         except EOFError:
             # 非交互式环境（如测试），使用默认值
-            te_path = "/workspace/TransformerEngine"
+            te_path = DEFAULT_TE_PATH
             print(f"TE_PATH: {te_path}")
         
         if not te_path:

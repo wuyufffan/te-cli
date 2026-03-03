@@ -115,17 +115,18 @@ print_info "创建包装脚本..."
 cat > "$INSTALL_BIN/te" << 'EOF'
 #!/bin/bash
 TE_CLI_SHARE="${HOME}/.local/share/te-cli"
+TE_CLI_CORE="${TE_CLI_SHARE}/core"
 
 if [[ ! -d "$TE_CLI_SHARE" ]]; then
     echo "错误：te-cli 未正确安装"
     exit 1
 fi
 
-export PYTHONPATH="${TE_CLI_SHARE}:${PYTHONPATH}"
+export PYTHONPATH="${TE_CLI_CORE}:${PYTHONPATH}"
 cd "${TE_CLI_SHARE}"
 exec python3 -c "
 import sys
-sys.path.insert(0, '${TE_CLI_SHARE}')
+sys.path.insert(0, '${TE_CLI_CORE}')
 
 from install_config import setup_config_if_needed
 from cli import main
