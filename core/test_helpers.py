@@ -85,6 +85,7 @@ def run_l0cpp(args: Optional[Iterable[str]] = None) -> int:
     
     script = f"""
 {_conda_activation()}
+export TE_PATH={config.te_path}
 bash {config.te_path}/qa/L0_cppunittest/test.sh
 """
     
@@ -106,6 +107,7 @@ def run_l0torch(args: Optional[Iterable[str]] = None) -> int:
     
     script = f"""
 {_conda_activation()}
+export TE_PATH={config.te_path}
 bash {config.te_path}/qa/L0_pytorch_unittest/test.sh
 """
     
@@ -125,7 +127,10 @@ def run_l1torch(args: Optional[Iterable[str]] = None) -> int:
     config = get_config()
     log_file = config.log_files["l1torch"]
     
-    script = f"bash {config.te_path}/qa/L1_pytorch_distributed_unittest/test.sh"
+    script = f"""
+export TE_PATH={config.te_path}
+bash {config.te_path}/qa/L1_pytorch_distributed_unittest/test.sh
+"""
     
     return _start_test(
         log_file=log_file,
