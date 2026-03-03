@@ -67,6 +67,48 @@ mkdir -p "$TE_INSTALL_DIR"
 cp -rL "$REPO_DIR"/* "$TE_INSTALL_DIR/"
 print_success "te-cli 安装完成"
 
+# 创建 core 目录和初始化脚本
+print_info "创建初始化脚本..."
+mkdir -p "${INSTALL_SHARE}/core"
+
+cat > "${INSTALL_SHARE}/core/te_init.sh" << 'INITEOF'
+#!/bin/bash
+#
+# TE (TransformerEngine) 环境初始化脚本
+# 由 te-cli 自动调用
+#
+
+# 设置 DTK 环境
+if [ -d "/opt/dtk-26.04" ]; then
+    export DTK_BASE="/opt/dtk-26.04"
+    export CMAKE_PREFIX_PATH="${DTK_BASE}/dcc/comgr/lib/cmake/amd_comgr"
+elif [ -d "/opt/dtk-25.04.2" ]; then
+    export DTK_BASE="/opt/dtk-25.04.2"
+    export CMAKE_PREFIX_PATH="${DTK_BASE}/lib64/cmake/amd_comgr"
+fi
+
+# MPI 设置
+export MPI_HOME=/opt/mpi
+
+# TE 构建环境变量
+export NVTE_BUILD_SUPPRESS_UNUSED_WARNING=1
+export NVTE_BUILD_SUPPRESS_RETURN_TYPE_WARNING=1
+export NVTE_BUILD_SUPPRESS_SIGN_COMPARE_WARNING=1
+export NVTE_FRAMEWORK=pytorch
+export NVTE_USE_ROCM=1
+export NVTE_USE_HIPBLASLT=1
+export NVTE_USE_ROCBLAS=1
+export NVTE_UB_WITH_MPI=0
+
+# 编译器设置
+export CXX=hipcc
+export VERBOSE=1
+
+INITEOF
+
+chmod +x "${INSTALL_SHARE}/core/te_init.sh"
+print_success "初始化脚本创建完成"
+
 # 创建包装脚本
 print_info "创建包装脚本..."
 
