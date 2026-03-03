@@ -35,13 +35,38 @@ def _get_dtk_config() -> str:
     """获取 DTK 配置脚本片段"""
     config = get_config()
     return f"""
-DTK_BASE="{config.dtk_base}"
-CMAKE_SUFFIX="lib64/cmake/amd_comgr"
-if [ -d "{config.dtk_26_path}" ]; then
-     DTK_BASE="{config.dtk_26_path}"
-     CMAKE_SUFFIX="dcc/comgr/lib/cmake/amd_comgr"
+# DTK detection: prefer env DTK_BASE, then 26.04, then /opt/dtk symlink, then 25.04.2
+if [ -d "${{DTK_BASE:-}}" ]; then
+    DTK_BASE="${{DTK_BASE}}"
+elif [ -d "{config.dtk_26_path}" ]; then
+    DTK_BASE="{config.dtk_26_path}"
+elif [ -d "/opt/dtk" ]; then
+    DTK_BASE="$(readlink -f /opt/dtk)"
+else
+    DTK_BASE="{config.dtk_base}"
 fi
-export CMAKE_PREFIX_PATH="${{DTK_BASE}}/${{CMAKE_SUFFIX}}"
+
+if [ -d "${{DTK_BASE}}/dcc/comgr/lib/cmake/amd_comgr" ]; then
+    CMAKE_PREFIX_PATH="${{DTK_BASE}}/dcc/comgr/lib/cmake/amd_comgr"
+elif [ -d "${{DTK_BASE}}/lib64/cmake/amd_comgr" ]; then
+    CMAKE_PREFIX_PATH="${{DTK_BASE}}/lib64/cmake/amd_comgr"
+elif [ -d "${{DTK_BASE}}/lib/cmake/amd_comgr" ]; then
+    CMAKE_PREFIX_PATH="${{DTK_BASE}}/lib/cmake/amd_comgr"
+fi
+
+# Resolve HIP clang includes and HSA headers to override stale CMake caches
+HIP_CLANG_INCLUDE_PATH=""
+for cand in "${DTK_BASE}/llvm/lib/clang"/*/include; do
+    if [ -d "$cand" ]; then
+        HIP_CLANG_INCLUDE_PATH="$cand"
+        break
+    fi
+done
+HSA_HEADER="${DTK_BASE}/include"
+export HIP_CLANG_INCLUDE_PATH
+export HSA_HEADER
+export DTK_BASE
+export CMAKE_PREFIX_PATH
 export MPI_HOME=/opt/mpi
 """.strip()
 
@@ -127,7 +152,17 @@ cd {config.te_path}/tests/cpp || exit 2
 
 export PYTHONPATH={config.te_path}/3rdparty/hipify_torch:$PYTHONPATH
 
+# Drop stale cache that may point to removed DTK versions
+rm -f build/CMakeCache.txt
+EXTRA_AR=""
+if [ -x "$DTK_BASE/dcc/bin/llvm-ar" ]; then
+    EXTRA_AR="-DCMAKE_CXX_COMPILER_AR=$DTK_BASE/dcc/bin/llvm-ar -DCMAKE_HIP_COMPILER_AR=$DTK_BASE/dcc/bin/llvm-ar -DCMAKE_C_COMPILER_AR=$DTK_BASE/dcc/bin/llvm-ar"
+fi
+
 cmake -GNinja -Bbuild . 2>&1
+    -DHIP_CLANG_INCLUDE_PATH="$HIP_CLANG_INCLUDE_PATH" \
+    -DHSA_HEADER="$HSA_HEADER" \
+    $EXTRA_AR 2>&1
 cmake --build build 2>&1
 
 end_time=$(date +%s)

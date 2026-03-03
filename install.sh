@@ -67,24 +67,34 @@ mkdir -p "$TE_INSTALL_DIR"
 cp -rL "$REPO_DIR"/* "$TE_INSTALL_DIR/"
 print_success "te-cli 安装完成"
 
-# 创建 core 目录和初始化脚本
+# 创建 core 目录和初始化脚本（与运行路径一致：${TE_INSTALL_DIR}/core）
 print_info "创建初始化脚本..."
-mkdir -p "${INSTALL_SHARE}/core"
+mkdir -p "${TE_INSTALL_DIR}/core"
 
-cat > "${INSTALL_SHARE}/core/te_init.sh" << 'INITEOF'
+cat > "${TE_INSTALL_DIR}/core/te_init.sh" << 'INITEOF'
 #!/bin/bash
 #
 # TE (TransformerEngine) 环境初始化脚本
 # 由 te-cli 自动调用
 #
 
-# 设置 DTK 环境
-if [ -d "/opt/dtk-26.04" ]; then
+# 设置 DTK 环境，优先 26.04，其次 /opt/dtk（若为软链），最后 25.04.2
+if [ -d "${DTK_BASE:-}" ]; then
+    export DTK_BASE="${DTK_BASE}"
+elif [ -d "/opt/dtk-26.04" ]; then
     export DTK_BASE="/opt/dtk-26.04"
-    export CMAKE_PREFIX_PATH="${DTK_BASE}/dcc/comgr/lib/cmake/amd_comgr"
+elif [ -d "/opt/dtk" ]; then
+    export DTK_BASE="$(readlink -f /opt/dtk)"
 elif [ -d "/opt/dtk-25.04.2" ]; then
     export DTK_BASE="/opt/dtk-25.04.2"
+fi
+
+if [ -d "${DTK_BASE}/dcc/comgr/lib/cmake/amd_comgr" ]; then
+    export CMAKE_PREFIX_PATH="${DTK_BASE}/dcc/comgr/lib/cmake/amd_comgr"
+elif [ -d "${DTK_BASE}/lib64/cmake/amd_comgr" ]; then
     export CMAKE_PREFIX_PATH="${DTK_BASE}/lib64/cmake/amd_comgr"
+elif [ -d "${DTK_BASE}/lib/cmake/amd_comgr" ]; then
+    export CMAKE_PREFIX_PATH="${DTK_BASE}/lib/cmake/amd_comgr"
 fi
 
 # MPI 设置
@@ -106,7 +116,7 @@ export VERBOSE=1
 
 INITEOF
 
-chmod +x "${INSTALL_SHARE}/core/te_init.sh"
+chmod +x "${TE_INSTALL_DIR}/core/te_init.sh"
 print_success "初始化脚本创建完成"
 
 # 创建包装脚本
