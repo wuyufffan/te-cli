@@ -5,6 +5,7 @@
 新的配置管理请使用 config_manager.py
 """
 import os
+import socket
 
 # Colors
 RED = '\033[1;31m'
@@ -21,14 +22,16 @@ TE_PATH = os.environ.get('TE_PATH', '/workspace/TransformerEngine')
 WORK_SPACE = os.environ.get('WORK_SPACE', '/workspace')
 TE_INIT_SCRIPT = os.environ.get('TE_INIT_SCRIPT', '')  # Needs to be passed or detected
 
+_HOSTNAME = socket.gethostname()
+
 # Log Files
-LOG_FILE_PY = os.path.join(TE_PATH, "build_python.log")
-LOG_FILE_CPP = os.path.join(TE_PATH, "build_cpp.log")
-LOG_FILE_REBUILD = os.path.join(TE_PATH, "rebuild_dev.log")
-LOG_FILE_ALL = os.path.join(TE_PATH, "build_all.log")
-LOG_FILE_L0_CPP = os.path.join(TE_PATH, "L0_cppunittest_kme.log")
-LOG_FILE_L0_TORCH = os.path.join(TE_PATH, "L0_pytorch_unittest_kme.log")
-LOG_FILE_L1_TORCH = os.path.join(TE_PATH, "L1_pytorch_distributed_unittest_kme.log")
+LOG_FILE_PY = os.path.join(TE_PATH, f"build_python_{_HOSTNAME}.log")
+LOG_FILE_CPP = os.path.join(TE_PATH, f"build_cpp_{_HOSTNAME}.log")
+LOG_FILE_REBUILD = os.path.join(TE_PATH, f"rebuild_dev_{_HOSTNAME}.log")
+LOG_FILE_ALL = os.path.join(TE_PATH, f"build_all_{_HOSTNAME}.log")
+LOG_FILE_L0_CPP = os.path.join(TE_PATH, f"L0_cppunittest_{_HOSTNAME}.log")
+LOG_FILE_L0_TORCH = os.path.join(TE_PATH, f"L0_pytorch_unittest_{_HOSTNAME}.log")
+LOG_FILE_L1_TORCH = os.path.join(TE_PATH, f"L1_pytorch_distributed_unittest_{_HOSTNAME}.log")
 
 # 向后兼容导出
 __all__ = [

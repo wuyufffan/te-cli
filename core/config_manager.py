@@ -6,6 +6,7 @@
 import json
 import logging
 import os
+import socket
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -59,14 +60,15 @@ class Config:
     @property
     def log_files(self) -> Dict[str, str]:
         """获取日志文件路径映射"""
+        hostname = socket.gethostname()
         return {
-            "build_py": os.path.join(self.te_path, "build_python.log"),
-            "build_cpp": os.path.join(self.te_path, "build_cpp.log"),
-            "rebuild": os.path.join(self.te_path, "rebuild_dev.log"),
-            "build_all": os.path.join(self.te_path, "build_all.log"),
-            "l0cpp": os.path.join(self.te_path, "L0_cppunittest_kme.log"),
-            "l0torch": os.path.join(self.te_path, "L0_pytorch_unittest_kme.log"),
-            "l1torch": os.path.join(self.te_path, "L1_pytorch_distributed_unittest_kme.log"),
+            "build_py": os.path.join(self.te_path, f"build_python_{hostname}.log"),
+            "build_cpp": os.path.join(self.te_path, f"build_cpp_{hostname}.log"),
+            "rebuild": os.path.join(self.te_path, f"rebuild_dev_{hostname}.log"),
+            "build_all": os.path.join(self.te_path, f"build_all_{hostname}.log"),
+            "l0cpp": os.path.join(self.te_path, f"L0_cppunittest_{hostname}.log"),
+            "l0torch": os.path.join(self.te_path, f"L0_pytorch_unittest_{hostname}.log"),
+            "l1torch": os.path.join(self.te_path, f"L1_pytorch_distributed_unittest_{hostname}.log"),
         }
     
     def get_init_script(self) -> str:

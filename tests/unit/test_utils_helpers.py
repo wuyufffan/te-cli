@@ -117,3 +117,86 @@ class TestCheckTe:
             assert utils_helpers.check_te() == 0
             captured = capsys.readouterr()
             assert "Failed" in captured.out or "Import" in captured.out
+
+
+# =============================================================================
+# 追加：文件探测与产物检查分支
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestFindAndStatHelpers:
+    def test_find_file_success(self):
+        with patch("subprocess.check_output", return_value="/tmp/a.so\n/tmp/b.so\n"):
+            assert utils_helpers._find_file("/tmp", "*.so") == "/tmp/a.so"
+
+    def test_find_file_not_found(self):
+        with patch("subprocess.check_output", side_effect=subprocess.CalledProcessError(1, "find")):
+            assert utils_helpers._find_file("/tmp", "*.so") == ""
+
+    def test_get_file_time_success(self):
+        with patch("subprocess.check_output", return_value="2024-01-01 00:00:00.123456789\n"):
+            assert utils_helpers._get_file_time("/tmp/x") == "2024-01-01 00:00:00"
+
+    def test_get_file_time_failure(self):
+        with patch("subprocess.check_output", side_effect=subprocess.CalledProcessError(1, "stat")):
+            assert utils_helpers._get_file_time("/tmp/x") == ""
+
+    def test_get_file_size_success(self):
+        with patch("subprocess.check_output", side_effect=["1024\n", "1.0KiB\n"]):
+            assert utils_helpers._get_file_size("/tmp/x") == "1.0KiB"
+
+    def test_get_file_size_failure(self):
+        with patch("subprocess.check_output", side_effect=subprocess.CalledProcessError(1, "stat")):
+            assert utils_helpers._get_file_size("/tmp/x") == ""
+
+
+@pytest.mark.unit
+class TestArtifacts:
+    def test_check_python_artifact_found(self, capsys):
+        with patch.object(utils_helpers, "_find_file", return_value="/tmp/libte.so"), \
+             patch("os.path.isfile", return_value=True), \
+             patch.object(utils_helpers, "_get_file_time", return_value="2024-01-01 00:00:00"), \
+             patch.object(utils_helpers, "_get_file_size", return_value="1.0KiB"):
+            utils_helpers._check_python_artifact("/tmp")
+        out = capsys.readouterr().out
+        assert "libte.so" in out
+        assert "1.0KiB" in out
+        assert "2024-01-01" in out
+
+    def test_check_python_artifact_missing(self, capsys):
+        with patch.object(utils_helpers, "_find_file", return_value=""), \
+             patch("os.path.isfile", return_value=False):
+            utils_helpers._check_python_artifact("/tmp")
+        out = capsys.readouterr().out
+        assert "Not Found" in out
+
+    def test_check_cpp_artifact_found(self, capsys):
+        with patch("os.path.isfile", return_value=True), \
+             patch.object(utils_helpers, "_get_file_time", return_value="2024-01-01 00:00:00"), \
+             patch.object(utils_helpers, "_get_file_size", return_value="2.0MiB"):
+            utils_helpers._check_cpp_artifact("/tmp/te")
+        out = capsys.readouterr().out
+        assert "test_operator" in out
+        assert "2.0MiB" in out
+
+    def test_check_cpp_artifact_missing(self, capsys):
+        with patch("os.path.isfile", return_value=False):
+            utils_helpers._check_cpp_artifact("/tmp/te")
+        out = capsys.readouterr().out
+        assert "Not Found" in out
+
+    def test_check_python_import_success(self, capsys):
+        result = MagicMock(returncode=0, stdout="/tmp/te/__init__.py\n", stderr="")
+        with patch("subprocess.run", return_value=result):
+            utils_helpers._check_python_import()
+        out = capsys.readouterr().out
+        assert "Success" in out
+        assert "__init__.py" in out
+
+    def test_check_python_import_failure(self, capsys):
+        result = MagicMock(returncode=1, stdout="", stderr="boom")
+        with patch("subprocess.run", return_value=result):
+            utils_helpers._check_python_import()
+        out = capsys.readouterr().out
+        assert "Import Failed" in out
