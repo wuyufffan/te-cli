@@ -5,14 +5,14 @@ test_helpers 模块单元测试
 from unittest.mock import patch, MagicMock
 import pytest
 
-import test_helpers
+import core.test_helpers as test_helpers
 
 
 @pytest.fixture
 def common_test_mocks():
     """提供通用 mock 设置"""
-    with patch("test_helpers.check_task_running") as check, \
-         patch("test_helpers.confirm_if_log_exists") as confirm, \
+    with patch("core.test_helpers.check_task_running") as check, \
+         patch("core.test_helpers.confirm_if_log_exists") as confirm, \
          patch("os.path.isdir") as isdir, \
          patch("subprocess.Popen") as popen:
         
@@ -37,22 +37,22 @@ class TestTestOperations:
     
     def test_task_already_running(self):
         """任务已在运行时阻止"""
-        with patch("test_helpers.check_task_running") as check:
+        with patch("core.test_helpers.check_task_running") as check:
             check.return_value = 1
             assert test_helpers.run_l0cpp() == 1
     
     def test_log_exists_confirm_no(self):
         """用户拒绝覆盖日志"""
-        with patch("test_helpers.check_task_running") as check, \
-             patch("test_helpers.confirm_if_log_exists") as confirm:
+        with patch("core.test_helpers.check_task_running") as check, \
+             patch("core.test_helpers.confirm_if_log_exists") as confirm:
             check.return_value = 0
             confirm.return_value = 1
             assert test_helpers.run_l0cpp() == 1
     
     def test_parent_dir_not_exist(self):
         """父目录不存在"""
-        with patch("test_helpers.check_task_running") as check, \
-             patch("test_helpers.confirm_if_log_exists") as confirm, \
+        with patch("core.test_helpers.check_task_running") as check, \
+             patch("core.test_helpers.confirm_if_log_exists") as confirm, \
              patch("os.path.isdir") as isdir:
             check.return_value = 0
             confirm.return_value = 0

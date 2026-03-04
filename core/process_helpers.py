@@ -7,9 +7,9 @@ import os
 import time
 from typing import List, Optional
 
-from config import RED, YELLOW, GREEN, CYAN, GREY, BLUE, RESET
-from config_manager import get_config
-from common_utils import (
+from .config import RED, YELLOW, GREEN, CYAN, GREY, BLUE, RESET
+from .config_manager import get_config
+from .common_utils import (
     get_human_size,
     pgrep,
     pkill,

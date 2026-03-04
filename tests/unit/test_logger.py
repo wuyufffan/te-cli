@@ -14,7 +14,7 @@ def test_colored_formatter_with_color(mock_isatty):
     formatted = formatter.format(record)
 
     # 应包含颜色码，且原 levelname 已恢复
-    from config import RED, RESET  # noqa: WPS433 (test import)
+    from core.config import RED, RESET  # noqa: WPS433 (test import)
     assert RED in formatted and RESET in formatted
     assert "ERROR" in formatted
     assert record.levelname == "ERROR"

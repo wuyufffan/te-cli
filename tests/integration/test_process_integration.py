@@ -9,8 +9,8 @@ import time
 import signal
 import pytest
 
-import common_utils
-import process_helpers
+import core.common_utils as common_utils
+import core.process_helpers as process_helpers
 
 
 # =============================================================================

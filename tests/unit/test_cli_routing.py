@@ -6,7 +6,7 @@ import sys
 import pytest
 from unittest.mock import patch, MagicMock
 
-import cli
+import core.cli as cli
 
 
 @pytest.fixture(autouse=True)
@@ -244,13 +244,13 @@ class TestAdditionalBranches:
         assert "TE CLI v1.0.0" in captured.out
 
     def test_check_env_flag(self, mock_helpers):
-        with patch("cli.check_environment", return_value=True) as mock_check_env:
+        with patch("core.cli.check_environment", return_value=True) as mock_check_env:
             sys.argv = ["te", "--check-env"]
             assert cli.main() == 0
             mock_check_env.assert_called_once_with(quiet=False)
 
     def test_check_env_failure_returns_1(self, mock_helpers):
-        with patch("cli.check_environment", return_value=False) as mock_check_env:
+        with patch("core.cli.check_environment", return_value=False) as mock_check_env:
             assert cli.main(["--check-env"]) == 1
             mock_check_env.assert_called_once_with(quiet=False)
 
@@ -259,7 +259,7 @@ class TestAdditionalBranches:
             assert cli.main(["-p"]) == 1
 
     def test_main_catches_system_exit_non_int(self, mock_helpers):
-        with patch("cli.parse_args", side_effect=SystemExit(None)):
+        with patch("core.cli.parse_args", side_effect=SystemExit(None)):
             assert cli.main(["-p"]) == 1
 
     def test_l0_alone_shows_help(self, mock_helpers):
@@ -294,3 +294,74 @@ def test_print_help_real_function_executes_lines(capsys):
     out = capsys.readouterr().out
     assert "TE 开发工具命令行" in out
     assert "编译构建" in out
+
+
+@pytest.mark.unit
+@pytest.mark.cli
+def test_print_help_contains_build_semantics_lines(capsys):
+    # 锁定构建语义文案，防止后续回归漂移
+    assert cli.print_help() == 0
+    out = capsys.readouterr().out
+    assert "-b -c" in out and "编译 Python（增量）" in out
+    assert "-b -c -d" in out and "编译 Python（全量/clean）" in out
+    assert "-b -t" in out and "编译 C++ 测试（增量）" in out
+    assert "-b -t -d" in out and "清理并编译 C++ 测试" in out
+    assert "-b -r" in out and "全量编译（Python + C++ 增量）" in out
+    assert "-b -r -d" in out and "全量编译（Python + C++ clean 重建）" in out
+
+
+@pytest.mark.unit
+@pytest.mark.cli
+@pytest.mark.build
+class TestBuildSemantics:
+    """区分 -b -c / -b -t / -b -r 的语义"""
+
+    def test_bc_only_calls_python_incremental(self, mock_helpers):
+        assert cli.main(["-b", "-c"]) == 0
+        mock_helpers["build_te_func_incremental"].assert_called_once()
+        mock_helpers["build_te_func"].assert_not_called()
+        mock_helpers["build_cpp_test_func"].assert_not_called()
+        mock_helpers["build_all_func"].assert_not_called()
+        mock_helpers["rebuild_dev"].assert_not_called()
+
+    def test_bc_d_only_calls_python_clean_build(self, mock_helpers):
+        assert cli.main(["-b", "-c", "-d"]) == 0
+        mock_helpers["build_te_func"].assert_called_once()
+        mock_helpers["build_te_func_incremental"].assert_not_called()
+        mock_helpers["build_cpp_test_func"].assert_not_called()
+        mock_helpers["build_all_func"].assert_not_called()
+        mock_helpers["rebuild_dev"].assert_not_called()
+
+    def test_bt_only_calls_cpp_build(self, mock_helpers):
+        assert cli.main(["-b", "-t"]) == 0
+        mock_helpers["build_cpp_test_func"].assert_called_once()
+        mock_helpers["build_clean_cpp"].assert_not_called()
+        mock_helpers["build_te_func_incremental"].assert_not_called()
+        mock_helpers["build_te_func"].assert_not_called()
+        mock_helpers["build_all_func"].assert_not_called()
+        mock_helpers["rebuild_dev"].assert_not_called()
+
+    def test_bt_d_calls_clean_then_cpp(self, mock_helpers):
+        assert cli.main(["-b", "-t", "-d"]) == 0
+        mock_helpers["build_clean_cpp"].assert_called_once()
+        mock_helpers["build_cpp_test_func"].assert_called_once()
+        mock_helpers["build_te_func_incremental"].assert_not_called()
+        mock_helpers["build_te_func"].assert_not_called()
+        mock_helpers["build_all_func"].assert_not_called()
+        mock_helpers["rebuild_dev"].assert_not_called()
+
+    def test_br_only_calls_rebuild_dev(self, mock_helpers):
+        assert cli.main(["-b", "-r"]) == 0
+        mock_helpers["rebuild_dev"].assert_called_once()
+        mock_helpers["build_all_func"].assert_not_called()
+        mock_helpers["build_te_func_incremental"].assert_not_called()
+        mock_helpers["build_te_func"].assert_not_called()
+        mock_helpers["build_cpp_test_func"].assert_not_called()
+
+    def test_br_d_only_calls_build_all(self, mock_helpers):
+        assert cli.main(["-b", "-r", "-d"]) == 0
+        mock_helpers["build_all_func"].assert_called_once()
+        mock_helpers["rebuild_dev"].assert_not_called()
+        mock_helpers["build_te_func_incremental"].assert_not_called()
+        mock_helpers["build_te_func"].assert_not_called()
+        mock_helpers["build_cpp_test_func"].assert_not_called()

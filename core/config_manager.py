@@ -11,9 +11,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-from config import (
+from .config import (
     BLUE, CYAN, GREEN, GREY, PURPLE, RED, RESET, YELLOW
 )
+from .dtk_detect import detect_dtk_base
 
 logger = logging.getLogger(__name__)
 
@@ -35,20 +36,12 @@ class Config:
     
     def __post_init__(self):
         """初始化后处理"""
-        # 自动检测 DTK 版本，优先 26.04，其次 /opt/dtk, 最后 25.04.2
-        override_base = os.environ.get("DTK_BASE")
-        if override_base and os.path.isdir(override_base):
-            self.dtk_base = override_base
-            logger.debug(f"使用环境变量 DTK_BASE: {self.dtk_base}")
-        elif os.path.isdir(self.dtk_26_path):
-            self.dtk_base = self.dtk_26_path
-            logger.debug(f"检测到 DTK 26.04: {self.dtk_base}")
-        elif os.path.isdir("/opt/dtk"):
-            self.dtk_base = os.path.realpath("/opt/dtk")
-            logger.debug(f"检测到 DTK (symlink): {self.dtk_base}")
-        elif os.path.isdir(self.dtk_base):
-            logger.debug(f"使用默认 DTK: {self.dtk_base}")
-        
+        # 委托 dtk_detect 模块统一检测 DTK 路径
+        self.dtk_base = detect_dtk_base(
+            dtk_26_path=self.dtk_26_path,
+            dtk_default=self.dtk_base,
+        )
+
         # 解析日志级别
         self._log_level_int = getattr(logging, self.log_level.upper(), logging.INFO)
     

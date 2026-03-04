@@ -9,10 +9,9 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 import pytest
 
-# 将 te-cli 根目录和 core 目录添加到路径
+# 将 te-cli 根目录添加到路径（core 是一个 package，通过 core.xxx 访问）
 TE_CLI_PATH = Path(__file__).parent.parent
 sys.path.insert(0, str(TE_CLI_PATH))
-sys.path.insert(0, str(TE_CLI_PATH / "core"))
 
 
 def pytest_configure(config):
@@ -103,11 +102,11 @@ def mock_os_operations():
 @pytest.fixture
 def mock_common_utils():
     """Mock common_utils 函数"""
-    with patch("common_utils.pgrep") as pgrep, \
-         patch("common_utils.pkill") as pkill, \
-         patch("common_utils.get_human_size") as size, \
-         patch("common_utils.get_process_start_time") as start, \
-         patch("common_utils.get_process_elapsed") as elapsed:
+    with patch("core.common_utils.pgrep") as pgrep, \
+         patch("core.common_utils.pkill") as pkill, \
+         patch("core.common_utils.get_human_size") as size, \
+         patch("core.common_utils.get_process_start_time") as start, \
+         patch("core.common_utils.get_process_elapsed") as elapsed:
         
         pgrep.return_value = []
         pkill.return_value = 0

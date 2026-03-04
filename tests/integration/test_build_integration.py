@@ -114,7 +114,7 @@ class TestCMakeIntegration:
 @pytest.fixture(autouse=True)
 def init_config_fixture():
     """自动初始化配置"""
-    from config_manager import init_config
+    from core.config_manager import init_config
     init_config()
 
 
@@ -125,7 +125,7 @@ class TestBuildScriptGeneration:
     
     def test_python_build_script_syntax(self, tmp_path):
         """测试 Python 构建脚本语法正确"""
-        import build_helpers
+        import core.build_helpers as build_helpers
         
         script = build_helpers._python_build_script("/tmp/init.sh", clean=False)
         
@@ -143,7 +143,7 @@ class TestBuildScriptGeneration:
     
     def test_cpp_build_script_syntax(self, tmp_path):
         """测试 C++ 构建脚本语法正确"""
-        import build_helpers
+        import core.build_helpers as build_helpers
         
         script = build_helpers._cpp_build_script("/tmp/init.sh")
         
@@ -161,7 +161,7 @@ class TestBuildScriptGeneration:
     
     def test_script_contains_all_exports(self):
         """测试脚本包含所有必要的环境变量导出"""
-        import build_helpers
+        import core.build_helpers as build_helpers
         
         script = build_helpers._python_build_script("/tmp/init.sh", clean=False)
         
@@ -188,9 +188,9 @@ class TestFilesystemOperations:
     
     def test_clean_cpp_build_directory(self, tmp_path):
         """测试清理 C++ 构建目录"""
-        import build_helpers
+        import core.build_helpers as build_helpers
         from unittest.mock import patch
-        from config_manager import Config
+        from core.config_manager import Config
         
         # 创建模拟的构建目录结构
         cpp_dir = tmp_path / "TransformerEngine" / "tests" / "cpp"
@@ -202,7 +202,7 @@ class TestFilesystemOperations:
         config = Config()
         config.te_path = str(tmp_path / "TransformerEngine")
         
-        with patch("build_helpers.get_config", lambda: config):
+        with patch("core.build_helpers.get_config", lambda: config):
             result = build_helpers.build_clean_cpp()
             assert result == 0
             assert not build_dir.exists(), "构建目录应该被删除"

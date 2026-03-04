@@ -9,7 +9,7 @@ import logging
 import sys
 from typing import List, Optional, Tuple
 
-from build_helpers import (
+from .build_helpers import (
     build_all_func,
     build_clean_cpp,
     build_cpp_test_func,
@@ -17,13 +17,13 @@ from build_helpers import (
     build_te_func_incremental,
     rebuild_dev,
 )
-from config import CYAN, GREEN, GREY, RED, RESET, YELLOW
-from config_manager import get_config, init_config
-from env_checker import check_environment
-from logger import setup_logging
-from process_helpers import kill_build_task, kill_test_task, show_processes
-from test_helpers import run_l0cpp, run_l0torch, run_l1torch
-from utils_helpers import check_te, view_log
+from .config import CYAN, GREEN, GREY, RED, RESET, YELLOW
+from .config_manager import get_config, init_config
+from .env_checker import check_environment
+from .logger import setup_logging
+from .process_helpers import kill_build_task, kill_test_task, show_processes
+from .test_helpers import run_l0cpp, run_l0torch, run_l1torch
+from .utils_helpers import check_te, view_log
 
 logger = logging.getLogger(__name__)
 
@@ -37,11 +37,11 @@ def print_help() -> int:
     print(f"     {YELLOW}-b -c{RESET}        编译 Python（增量）")
     print(f"     {YELLOW}-b -c -d{RESET}     编译 Python（全量/clean）")
     print(f"     {YELLOW}-b -c -l{RESET}     查看 Python 编译日志")
-    print(f"     {YELLOW}-b -t{RESET}        编译 C++ 测试")
+    print(f"     {YELLOW}-b -t{RESET}        编译 C++ 测试（增量）")
     print(f"     {YELLOW}-b -t -d{RESET}     清理并编译 C++ 测试")
     print(f"     {YELLOW}-b -t -l{RESET}     查看 C++ 编译日志")
-    print(f"     {YELLOW}-b -r{RESET}        智能重建（仅修改的文件）")
-    print(f"     {YELLOW}-b -r -d{RESET}     全量重建（clean + build）")
+    print(f"     {YELLOW}-b -r{RESET}        全量编译（Python + C++ 增量）")
+    print(f"     {YELLOW}-b -r -d{RESET}     全量编译（Python + C++ clean 重建）")
     print(f"     {YELLOW}-b -r -l{RESET}     查看重建日志")
     print(f"     {YELLOW}-b -k{RESET}        终止编译任务")
     print("")

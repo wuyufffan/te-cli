@@ -8,9 +8,9 @@ import subprocess
 from pathlib import Path
 from typing import Iterable, Optional
 
-from config import BLUE, GREEN, GREY, RESET
-from config_manager import get_config
-from process_helpers import check_task_running, confirm_if_log_exists
+from .config import BLUE, GREEN, GREY, RESET
+from .config_manager import get_config
+from .process_helpers import check_task_running, confirm_if_log_exists
 
 logger = logging.getLogger(__name__)
 

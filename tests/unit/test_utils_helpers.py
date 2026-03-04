@@ -6,7 +6,7 @@ import subprocess
 from unittest.mock import patch, MagicMock
 import pytest
 
-import utils_helpers
+import core.utils_helpers as utils_helpers
 
 
 @pytest.mark.unit

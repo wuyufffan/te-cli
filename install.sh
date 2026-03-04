@@ -132,14 +132,14 @@ if [[ ! -d "$TE_CLI_SHARE" ]]; then
     exit 1
 fi
 
-export PYTHONPATH="${TE_CLI_CORE}:${PYTHONPATH}"
+export PYTHONPATH="${TE_CLI_SHARE}:${PYTHONPATH}"
 cd "${TE_CLI_SHARE}"
 exec python3 -c "
 import sys
-sys.path.insert(0, '${TE_CLI_CORE}')
+sys.path.insert(0, '${TE_CLI_SHARE}')
 
-from install_config import setup_config_if_needed
-from cli import main
+from core.install_config import setup_config_if_needed
+from core.cli import main
 
 te_path = setup_config_if_needed()
 if te_path is None:

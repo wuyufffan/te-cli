@@ -5,7 +5,7 @@ process_helpers 模块单元测试
 from unittest.mock import patch, MagicMock
 import pytest
 
-import process_helpers
+import core.process_helpers as process_helpers
 
 
 # =============================================================================
@@ -19,7 +19,7 @@ class TestShowProcesses:
     
     def test_no_running_tasks(self, capsys):
         """没有运行中的任务"""
-        with patch("process_helpers.pgrep") as pgrep:
+        with patch("core.process_helpers.pgrep") as pgrep:
             pgrep.return_value = []
             assert process_helpers.show_processes() == 0
             captured = capsys.readouterr()
@@ -27,7 +27,7 @@ class TestShowProcesses:
     
     def test_build_task_running(self, capsys):
         """有构建任务在运行"""
-        with patch("process_helpers.pgrep") as pgrep, \
+        with patch("core.process_helpers.pgrep") as pgrep, \
              patch("os.path.exists") as exists:
             pgrep.side_effect = lambda p: ["1234", "5678"] if "pip" in p or "cmake" in p else []
             exists.return_value = True
@@ -74,7 +74,7 @@ class TestConfirmLog:
         with patch("os.path.exists") as exists, \
              patch("os.path.getsize") as getsize, \
              patch("builtins.input") as mock_input, \
-             patch("common_utils.get_human_size") as size:
+             patch("core.common_utils.get_human_size") as size:
             exists.return_value = True
             getsize.return_value = 1024
             mock_input.return_value = user_input
@@ -94,13 +94,13 @@ class TestTaskManagement:
     
     def test_check_task_not_running(self):
         """没有任务在运行"""
-        with patch("process_helpers.pgrep") as pgrep:
+        with patch("core.process_helpers.pgrep") as pgrep:
             pgrep.return_value = []
             assert process_helpers.check_task_running("pattern", "Test") == 0
     
     def test_check_task_running(self, capsys):
         """有任务在运行"""
-        with patch("process_helpers.pgrep") as pgrep:
+        with patch("core.process_helpers.pgrep") as pgrep:
             pgrep.return_value = ["1234"]
             assert process_helpers.check_task_running("pattern", "Test") == 1
             captured = capsys.readouterr()
@@ -113,10 +113,10 @@ class TestTaskManagement:
     def test_kill_task_confirmation(self, confirm, expected):
         """测试终止任务确认"""
         with patch("builtins.input") as mock_input, \
-             patch("process_helpers.pkill") as pkill, \
+             patch("core.process_helpers.pkill") as pkill, \
              patch("time.sleep"), \
-             patch("process_helpers.get_process_start_time") as start, \
-             patch("process_helpers.get_process_elapsed") as elapsed:
+             patch("core.process_helpers.get_process_start_time") as start, \
+             patch("core.process_helpers.get_process_elapsed") as elapsed:
             mock_input.return_value = confirm
             pkill.return_value = 0
             start.return_value = "Mon Jan 1 00:00:00 2024"
@@ -130,7 +130,7 @@ class TestTaskManagement:
     
     def test_kill_build_task_no_running(self, capsys):
         """没有构建任务时"""
-        with patch("process_helpers.pgrep") as pgrep:
+        with patch("core.process_helpers.pgrep") as pgrep:
             pgrep.return_value = []
             assert process_helpers.kill_build_task() == 0
             captured = capsys.readouterr()
@@ -138,6 +138,6 @@ class TestTaskManagement:
     
     def test_kill_test_task_no_running(self, capsys):
         """没有测试任务时"""
-        with patch("process_helpers.pgrep") as pgrep:
+        with patch("core.process_helpers.pgrep") as pgrep:
             pgrep.return_value = []
             assert process_helpers.kill_test_task("pattern", "Test") == 0

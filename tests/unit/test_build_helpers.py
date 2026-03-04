@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 import pytest
 
-import build_helpers
+import core.build_helpers as build_helpers
 
 
 # =============================================================================
@@ -51,8 +51,8 @@ class TestBuildOperations:
     @pytest.fixture
     def common_mocks(self):
         """提供通用 mock 设置"""
-        with patch("build_helpers.check_task_running") as check, \
-             patch("build_helpers.confirm_if_log_exists") as confirm, \
+        with patch("core.build_helpers.check_task_running") as check, \
+             patch("core.build_helpers.confirm_if_log_exists") as confirm, \
              patch("subprocess.Popen") as popen, \
              patch("shutil.rmtree") as rmtree:
             
@@ -110,7 +110,7 @@ class TestBuildOperations:
     
     def test_rebuild_without_te_path(self, monkeypatch):
         """TE_PATH 未设置时返回错误"""
-        from config_manager import Config
+        from core.config_manager import Config
         config = Config()
         config.te_path = ""
         monkeypatch.setattr(build_helpers, "get_config", lambda: config)
@@ -142,7 +142,7 @@ class TestScriptExecution:
     
     def test_resolve_init_script_from_module(self, monkeypatch):
         """从模块路径解析初始化脚本"""
-        from config_manager import Config
+        from core.config_manager import Config
         config = Config()
         config.te_init_script = ""
         monkeypatch.setattr(build_helpers, "get_config", lambda: config)
@@ -151,7 +151,7 @@ class TestScriptExecution:
     
     def test_resolve_init_script_from_env(self, monkeypatch):
         """从环境变量解析初始化脚本"""
-        from config_manager import Config
+        from core.config_manager import Config
         config = Config()
         config.te_init_script = "/custom/path/te_init.sh"
         monkeypatch.setattr(build_helpers, "get_config", lambda: config)

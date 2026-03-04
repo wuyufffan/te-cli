@@ -7,8 +7,8 @@ import os
 import shutil
 import subprocess
 
-from config import CYAN, GREEN, GREY, RED, RESET
-from config_manager import get_config
+from .config import CYAN, GREEN, GREY, RED, RESET
+from .config_manager import get_config
 
 logger = logging.getLogger(__name__)
 

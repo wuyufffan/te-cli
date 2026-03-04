@@ -8,10 +8,11 @@ import os
 import shutil
 import subprocess
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Dict, List, Tuple
 
-from config import GREEN, RED, RESET, YELLOW
-from config_manager import get_config
+from .config import GREEN, RED, RESET, YELLOW
+from .config_manager import get_config
 
 logger = logging.getLogger(__name__)
 

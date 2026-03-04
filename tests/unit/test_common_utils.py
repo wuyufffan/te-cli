@@ -6,7 +6,7 @@ import subprocess
 from unittest.mock import patch
 import pytest
 
-import common_utils
+import core.common_utils as common_utils
 
 
 @pytest.mark.unit

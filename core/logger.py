@@ -7,7 +7,7 @@ import logging
 import sys
 from typing import Optional
 
-from config import CYAN, GREEN, GREY, RED, RESET, YELLOW
+from .config import CYAN, GREEN, GREY, RED, RESET, YELLOW
 
 
 class ColoredFormatter(logging.Formatter):

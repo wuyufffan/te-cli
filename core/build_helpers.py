@@ -10,9 +10,10 @@ import subprocess
 from pathlib import Path
 from typing import Iterable, Optional
 
-from config import BLUE, GREEN, GREY, RED, RESET
-from config_manager import get_config
-from process_helpers import check_task_running, confirm_if_log_exists
+from .config import BLUE, GREEN, GREY, RED, RESET
+from .config_manager import get_config
+from .dtk_detect import DTK_25_PATH, DTK_26_PATH
+from .process_helpers import check_task_running, confirm_if_log_exists
 
 logger = logging.getLogger(__name__)
 
@@ -32,18 +33,17 @@ export VERBOSE=1
 
 
 def _get_dtk_config() -> str:
-    """获取 DTK 配置脚本片段"""
-    config = get_config()
+    """获取 DTK 配置脚本片段（路径常量来自 dtk_detect 统一维护）"""
     return f"""
 # DTK detection: prefer env DTK_BASE, then 26.04, then /opt/dtk symlink, then 25.04.2
 if [ -d "${{DTK_BASE:-}}" ]; then
     DTK_BASE="${{DTK_BASE}}"
-elif [ -d "{config.dtk_26_path}" ]; then
-    DTK_BASE="{config.dtk_26_path}"
+elif [ -d "{DTK_26_PATH}" ]; then
+    DTK_BASE="{DTK_26_PATH}"
 elif [ -d "/opt/dtk" ]; then
     DTK_BASE="$(readlink -f /opt/dtk)"
 else
-    DTK_BASE="{config.dtk_base}"
+    DTK_BASE="{DTK_25_PATH}"
 fi
 
 if [ -d "${{DTK_BASE}}/dcc/comgr/lib/cmake/amd_comgr" ]; then
@@ -159,7 +159,7 @@ if [ -x "$DTK_BASE/dcc/bin/llvm-ar" ]; then
     EXTRA_AR="-DCMAKE_CXX_COMPILER_AR=$DTK_BASE/dcc/bin/llvm-ar -DCMAKE_HIP_COMPILER_AR=$DTK_BASE/dcc/bin/llvm-ar -DCMAKE_C_COMPILER_AR=$DTK_BASE/dcc/bin/llvm-ar"
 fi
 
-cmake -GNinja -Bbuild . 2>&1
+cmake -GNinja -Bbuild . \
     -DHIP_CLANG_INCLUDE_PATH="$HIP_CLANG_INCLUDE_PATH" \
     -DHSA_HEADER="$HSA_HEADER" \
     $EXTRA_AR 2>&1

@@ -2,6 +2,9 @@
 """
 TE CLI 安装配置管理模块
 处理首次运行的配置提示和配置文件管理
+
+注意：config_manager.py 是运行时配置的权威来源，本模块仅处理首次安装的
+交互式提示逻辑，并提供向后兼容的 load_config/save_config 简单接口。
 """
 
 import json
@@ -29,7 +32,7 @@ def config_exists() -> bool:
 
 
 def load_config() -> Optional[dict]:
-    """加载配置文件"""
+    """加载配置文件，返回原始字典（向后兼容接口）"""
     config_path = get_config_path()
     if not config_path.exists():
         return None
@@ -41,7 +44,7 @@ def load_config() -> Optional[dict]:
 
 
 def save_config(te_path: str) -> bool:
-    """保存配置到文件"""
+    """保存 te_path 配置到文件，返回 True/False（向后兼容接口）"""
     config_path = get_config_path()
     try:
         with open(config_path, 'w') as f:
@@ -126,9 +129,17 @@ def setup_config_if_needed() -> Optional[str]:
     返回: te_path 或 None（如果配置失败）
     """
     if config_exists():
-        config = load_config()
-        if config and "te_path" in config:
-            return config["te_path"]
+        # 使用 config_manager.Config.from_file() 作为权威读取入口，
+        # 避免与 config_manager 分别维护独立的 JSON 解析逻辑。
+        try:
+            from config_manager import Config
+            cfg = Config.from_file(str(get_config_path()))
+            return cfg.te_path
+        except Exception:
+            # fallback：降级为原始 dict 读取
+            config = load_config()
+            if config and "te_path" in config:
+                return config["te_path"]
     
     # 需要配置
     te_path = prompt_for_te_path()
