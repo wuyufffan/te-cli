@@ -4,6 +4,7 @@
 """
 import logging
 import os
+import shutil
 import subprocess
 
 from config import CYAN, GREEN, GREY, RED, RESET
@@ -34,8 +35,12 @@ def view_log(log_type: str) -> int:
         logger.info(f"查看日志: {file_path}")
         print(f"{GREEN}📄 Tailing log file: {CYAN}{file_path}{RESET}")
         try:
+            if shutil.which("less"):
+                return subprocess.call(["less", "+F", "-R", file_path])
             return subprocess.call(["tail", "-f", "-n", "50", file_path])
         except KeyboardInterrupt:
+            # 补一个空换行防止 \r 带来的覆盖前行现象
+            print()
             print(f"{GREY}Log tail stopped by user.{RESET}")
             return 0
     

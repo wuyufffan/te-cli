@@ -31,11 +31,27 @@ class TestViewLog:
             captured = capsys.readouterr()
             assert "not found" in captured.out.lower()
     
-    def test_view_log_success(self):
-        """成功查看日志"""
+    def test_view_log_success_with_less(self):
+        """成功查看日志 (支持 less)"""
         with patch("os.path.isfile") as mock, \
+             patch("shutil.which") as which_mock, \
              patch("subprocess.call") as call:
             mock.return_value = True
+            which_mock.return_value = "/usr/bin/less"
+            call.return_value = 0
+            
+            assert utils_helpers.view_log("build_py") == 0
+            call_args = call.call_args[0][0]
+            assert call_args[0] == "less"
+            assert "+F" in call_args
+
+    def test_view_log_success_fallback_tail(self):
+        """成功查看日志 (没有 less 时回退 tail)"""
+        with patch("os.path.isfile") as mock, \
+             patch("shutil.which") as which_mock, \
+             patch("subprocess.call") as call:
+            mock.return_value = True
+            which_mock.return_value = None
             call.return_value = 0
             
             assert utils_helpers.view_log("build_py") == 0
@@ -45,8 +61,10 @@ class TestViewLog:
     def test_view_log_keyboard_interrupt(self):
         """用户中断日志查看"""
         with patch("os.path.isfile") as mock, \
+             patch("shutil.which") as which_mock, \
              patch("subprocess.call") as call:
             mock.return_value = True
+            which_mock.return_value = None
             call.side_effect = KeyboardInterrupt()
             assert utils_helpers.view_log("build_py") == 0
     
@@ -54,8 +72,10 @@ class TestViewLog:
     def test_all_log_types(self, log_type):
         """测试所有日志类型映射"""
         with patch("os.path.isfile") as mock, \
+             patch("shutil.which") as which_mock, \
              patch("subprocess.call") as call:
             mock.return_value = True
+            which_mock.return_value = "/usr/bin/less"
             call.return_value = 0
             assert utils_helpers.view_log(log_type) == 0
 
