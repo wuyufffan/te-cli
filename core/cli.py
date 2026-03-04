@@ -40,8 +40,8 @@ def print_help() -> int:
     print(f"     {YELLOW}-b -t{RESET}        编译 C++ 测试（增量）")
     print(f"     {YELLOW}-b -t -d{RESET}     清理并编译 C++ 测试")
     print(f"     {YELLOW}-b -t -l{RESET}     查看 C++ 编译日志")
-    print(f"     {YELLOW}-b -r{RESET}        全量编译（Python + C++ 增量）")
-    print(f"     {YELLOW}-b -r -d{RESET}     全量编译（Python + C++ clean 重建）")
+    print(f"     {YELLOW}-b -r{RESET}        增量重建（Python + C++ 增量）")
+    print(f"     {YELLOW}-b -r -d{RESET}     全量重建（Python + C++ clean 重建）")
     print(f"     {YELLOW}-b -r -l{RESET}     查看重建日志")
     print(f"     {YELLOW}-b -k{RESET}        终止编译任务")
     print("")
@@ -256,14 +256,6 @@ def route_command(args: argparse.Namespace) -> int:
     # 测试相关
     if args.l0 or args.l1:
         return route_test_command(args)
-    
-    # 长格式参数处理
-    if hasattr(args, 'rebuild') and args.rebuild:
-        if args.log:
-            return view_log("build_all" if args.delete else "rebuild")
-        if args.delete:
-            return build_all_func()
-        return rebuild_dev()
     
     # 默认：显示帮助
     return print_help()

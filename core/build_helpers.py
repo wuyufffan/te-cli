@@ -152,8 +152,6 @@ cd {config.te_path}/tests/cpp || exit 2
 
 export PYTHONPATH={config.te_path}/3rdparty/hipify_torch:$PYTHONPATH
 
-# Drop stale cache that may point to removed DTK versions
-rm -f build/CMakeCache.txt
 EXTRA_AR=""
 if [ -x "$DTK_BASE/dcc/bin/llvm-ar" ]; then
     EXTRA_AR="-DCMAKE_CXX_COMPILER_AR=$DTK_BASE/dcc/bin/llvm-ar -DCMAKE_HIP_COMPILER_AR=$DTK_BASE/dcc/bin/llvm-ar -DCMAKE_C_COMPILER_AR=$DTK_BASE/dcc/bin/llvm-ar"
