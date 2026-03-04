@@ -158,6 +158,8 @@ class TestSetupConfigIfNeeded:
     def test_prompts_for_config_when_not_exists(self, tmp_path, monkeypatch):
         """测试无配置时提示用户输入"""
         set_home(monkeypatch, tmp_path)
+        # Mock 默认路径，防止其在宿主机上真实存在从而跳过 prompt
+        monkeypatch.setattr("install_config.DEFAULT_TE_PATH", "/does/not/exist/fake/path")
         
         valid_dir = tmp_path / "test_te"
         valid_dir.mkdir()

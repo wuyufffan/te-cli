@@ -56,13 +56,13 @@ fi
 
 # Resolve HIP clang includes and HSA headers to override stale CMake caches
 HIP_CLANG_INCLUDE_PATH=""
-for cand in "${DTK_BASE}/llvm/lib/clang"/*/include; do
+for cand in "${{DTK_BASE}}/llvm/lib/clang"/*/include; do
     if [ -d "$cand" ]; then
         HIP_CLANG_INCLUDE_PATH="$cand"
         break
     fi
 done
-HSA_HEADER="${DTK_BASE}/include"
+HSA_HEADER="${{DTK_BASE}}/include"
 export HIP_CLANG_INCLUDE_PATH
 export HSA_HEADER
 export DTK_BASE

@@ -9,9 +9,10 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 import pytest
 
-# 将 te-cli 根目录添加到路径
+# 将 te-cli 根目录和 core 目录添加到路径
 TE_CLI_PATH = Path(__file__).parent.parent
 sys.path.insert(0, str(TE_CLI_PATH))
+sys.path.insert(0, str(TE_CLI_PATH / "core"))
 
 
 def pytest_configure(config):
