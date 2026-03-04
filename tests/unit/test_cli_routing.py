@@ -106,7 +106,7 @@ class TestBuildCommands:
         (["-b", "-t", "-d"], "build_cpp_test_func"),
         # 重建
         (["-b", "-r"], "rebuild_dev"),
-        (["--rebuild"], "rebuild_dev"),
+        (["-b", "--rebuild"], "rebuild_dev"),
         (["-b", "-r", "-d"], "build_all_func"),
         (["-b", "-r", "-l"], "view_log"),
         (["-b", "-r", "-d", "-l"], "view_log"),
@@ -280,10 +280,12 @@ class TestAdditionalBranches:
         assert cli.main(args) == 0
         mock_helpers["view_log"].assert_called_once_with(expected)
 
-    def test_rebuild_long_option_path_without_build_flag(self, mock_helpers):
-        # 覆盖 route_command 中的长参数 rebuild 分支
+    def test_rebuild_without_build_flag_does_not_trigger_build(self, mock_helpers):
+        """te --rebuild (无 -b) 不应触发编译，应回退到帮助"""
         assert cli.main(["--rebuild"]) == 0
-        mock_helpers["rebuild_dev"].assert_called_once()
+        mock_helpers["rebuild_dev"].assert_not_called()
+        mock_helpers["build_all_func"].assert_not_called()
+        mock_helpers["print_help"].assert_called()
 
 
 @pytest.mark.unit
@@ -306,8 +308,8 @@ def test_print_help_contains_build_semantics_lines(capsys):
     assert "-b -c -d" in out and "编译 Python（全量/clean）" in out
     assert "-b -t" in out and "编译 C++ 测试（增量）" in out
     assert "-b -t -d" in out and "清理并编译 C++ 测试" in out
-    assert "-b -r" in out and "全量编译（Python + C++ 增量）" in out
-    assert "-b -r -d" in out and "全量编译（Python + C++ clean 重建）" in out
+    assert "-b -r" in out and "增量重建（Python + C++ 增量）" in out
+    assert "-b -r -d" in out and "全量重建（Python + C++ clean 重建）" in out
 
 
 @pytest.mark.unit

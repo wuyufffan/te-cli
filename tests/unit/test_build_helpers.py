@@ -38,6 +38,12 @@ class TestScriptGeneration:
         assert "cmake -GNinja -Bbuild" in script
         assert "cmake --build build" in script
 
+    def test_cpp_incremental_script_does_not_delete_cmake_cache(self):
+        """增量 C++ 构建脚本不应删除 CMakeCache.txt"""
+        script = build_helpers._cpp_build_script("/init.sh")
+        assert "rm -f build/CMakeCache.txt" not in script
+        assert "rm -rf" not in script
+
 
 # =============================================================================
 # 构建启动测试 - 使用公共参数化
