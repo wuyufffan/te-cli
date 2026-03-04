@@ -131,6 +131,18 @@ class TestBuildCommands:
         mock_helpers["build_clean_cpp"].assert_called_once()
         mock_helpers["build_cpp_test_func"].assert_called_once()
 
+    def test_build_only_flag_shows_help(self, mock_helpers):
+        """仅 -b 无子命令应回退帮助"""
+        assert cli.main(["-b"]) == 0
+        mock_helpers["print_help"].assert_called_once()
+
+    def test_build_cpp_clean_failure_aborts(self, mock_helpers):
+        """清理返回非零时不再构建"""
+        mock_helpers["build_clean_cpp"].return_value = 1
+        sys.argv = ["te", "-b", "-t", "-d"]
+        assert cli.main() == 1
+        mock_helpers["build_cpp_test_func"].assert_not_called()
+
 
 # =============================================================================
 # 测试命令
@@ -165,6 +177,14 @@ class TestTestCommands:
         else:
             mock_helpers[expected_func].assert_called_once()
 
+    def test_gpu_flag_passed_to_l0cpp(self, mock_helpers):
+        assert cli.main(["-0", "-c", "-g", "3"]) == 0
+        mock_helpers["run_l0cpp"].assert_called_once_with(gpu="3")
+
+    def test_gpu_flag_passed_to_l0torch(self, mock_helpers):
+        assert cli.main(["-0", "-t", "-g", "5,6"]) == 0
+        mock_helpers["run_l0torch"].assert_called_once_with(gpu="5,6")
+
 
 # =============================================================================
 # 参数冲突和错误处理
@@ -193,3 +213,84 @@ class TestArgumentValidation:
         """测试未知参数处理 - argparse 对未知参数返回 2"""
         result = cli.main(args)
         assert result != 0  # 应该返回非零值
+
+
+# =============================================================================
+# 追加分支覆盖
+# =============================================================================
+
+
+@pytest.mark.unit
+@pytest.mark.cli
+class TestAdditionalBranches:
+    def test_route_test_without_level_shows_help(self, mock_helpers):
+        # 仅 -t/-test 而无 -0/-1，route_test_command 会回退到 print_help
+        sys.argv = ["te", "-t"]
+        assert cli.main() == 0
+        mock_helpers["print_help"].assert_called()
+
+    def test_verbose_sets_debug_level(self, mock_helpers):
+        # -V 应使 init_config/use DEBUG, setup_logging use logging.DEBUG
+        sys.argv = ["te", "-V", "-p"]
+        assert cli.main() == 0
+        mock_helpers["init_config"].assert_called_once_with(log_level='DEBUG')
+        mock_helpers["setup_logging"].assert_called_once_with(level=cli.logging.DEBUG)
+        mock_helpers["show_processes"].assert_called_once()
+
+    def test_version_flag(self, mock_helpers, capsys):
+        sys.argv = ["te", "-v"]
+        assert cli.main() == 0
+        captured = capsys.readouterr()
+        assert "TE CLI v1.0.0" in captured.out
+
+    def test_check_env_flag(self, mock_helpers):
+        with patch("cli.check_environment", return_value=True) as mock_check_env:
+            sys.argv = ["te", "--check-env"]
+            assert cli.main() == 0
+            mock_check_env.assert_called_once_with(quiet=False)
+
+    def test_check_env_failure_returns_1(self, mock_helpers):
+        with patch("cli.check_environment", return_value=False) as mock_check_env:
+            assert cli.main(["--check-env"]) == 1
+            mock_check_env.assert_called_once_with(quiet=False)
+
+    def test_main_catches_generic_exception(self, mock_helpers):
+        with patch.object(cli, "route_command", side_effect=RuntimeError("boom")):
+            assert cli.main(["-p"]) == 1
+
+    def test_main_catches_system_exit_non_int(self, mock_helpers):
+        with patch("cli.parse_args", side_effect=SystemExit(None)):
+            assert cli.main(["-p"]) == 1
+
+    def test_l0_alone_shows_help(self, mock_helpers):
+        assert cli.main(["-0"]) == 0
+        mock_helpers["print_help"].assert_called_once()
+
+    def test_l1_alone_shows_help(self, mock_helpers):
+        assert cli.main(["-1"]) == 0
+        mock_helpers["print_help"].assert_called_once()
+
+    @pytest.mark.parametrize("args,expected", [
+        (["-b", "-r", "-l"], "rebuild"),
+        (["-b", "-r", "-d", "-l"], "build_all"),
+        (["-b", "-c", "-l"], "build_py"),
+        (["-b", "-t", "-l"], "build_cpp"),
+    ])
+    def test_view_log_called_with_expected_arg(self, mock_helpers, args, expected):
+        assert cli.main(args) == 0
+        mock_helpers["view_log"].assert_called_once_with(expected)
+
+    def test_rebuild_long_option_path_without_build_flag(self, mock_helpers):
+        # 覆盖 route_command 中的长参数 rebuild 分支
+        assert cli.main(["--rebuild"]) == 0
+        mock_helpers["rebuild_dev"].assert_called_once()
+
+
+@pytest.mark.unit
+@pytest.mark.cli
+def test_print_help_real_function_executes_lines(capsys):
+    # 不使用 mock_helpers，直接执行真实 print_help 覆盖帮助输出行
+    assert cli.print_help() == 0
+    out = capsys.readouterr().out
+    assert "TE 开发工具命令行" in out
+    assert "编译构建" in out

@@ -134,6 +134,11 @@ class TestFindAndStatHelpers:
         with patch("subprocess.check_output", side_effect=subprocess.CalledProcessError(1, "find")):
             assert utils_helpers._find_file("/tmp", "*.so") == ""
 
+    def test_find_file_empty_output(self):
+        # find 返回空白行时应返回空字符串
+        with patch("subprocess.check_output", return_value="\n  \n\n"):
+            assert utils_helpers._find_file("/tmp", "*.so") == ""
+
     def test_get_file_time_success(self):
         with patch("subprocess.check_output", return_value="2024-01-01 00:00:00.123456789\n"):
             assert utils_helpers._get_file_time("/tmp/x") == "2024-01-01 00:00:00"
@@ -148,6 +153,11 @@ class TestFindAndStatHelpers:
 
     def test_get_file_size_failure(self):
         with patch("subprocess.check_output", side_effect=subprocess.CalledProcessError(1, "stat")):
+            assert utils_helpers._get_file_size("/tmp/x") == ""
+
+    def test_get_file_size_numfmt_failure(self):
+        # 第二次 numfmt 调用失败时返回空字符串
+        with patch("subprocess.check_output", side_effect=["1024\n", subprocess.CalledProcessError(1, "numfmt")]):
             assert utils_helpers._get_file_size("/tmp/x") == ""
 
 
@@ -166,6 +176,14 @@ class TestArtifacts:
 
     def test_check_python_artifact_missing(self, capsys):
         with patch.object(utils_helpers, "_find_file", return_value=""), \
+             patch("os.path.isfile", return_value=False):
+            utils_helpers._check_python_artifact("/tmp")
+        out = capsys.readouterr().out
+        assert "Not Found" in out
+
+    def test_check_python_artifact_path_not_file(self, capsys):
+        # 找到路径但不是文件时也应视为缺失
+        with patch.object(utils_helpers, "_find_file", return_value="/tmp/libte.so"), \
              patch("os.path.isfile", return_value=False):
             utils_helpers._check_python_artifact("/tmp")
         out = capsys.readouterr().out
@@ -200,3 +218,19 @@ class TestArtifacts:
             utils_helpers._check_python_import()
         out = capsys.readouterr().out
         assert "Import Failed" in out
+
+    def test_check_python_import_exception(self, capsys):
+        # subprocess.run 本身抛异常的分支
+        with patch("subprocess.run", side_effect=OSError("run failed")):
+            utils_helpers._check_python_import()
+        out = capsys.readouterr().out
+        assert "Import Failed" in out
+
+    def test_check_python_import_success_with_stderr(self, capsys):
+        # 成功但 stderr 非空时也要提示
+        result = MagicMock(returncode=0, stdout="/tmp/te/__init__.py\n", stderr="warning")
+        with patch("subprocess.run", return_value=result):
+            utils_helpers._check_python_import()
+        out = capsys.readouterr().out
+        assert "Success" in out
+        assert "warning" in out
