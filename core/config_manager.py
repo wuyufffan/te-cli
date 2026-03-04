@@ -68,7 +68,8 @@ class Config:
         """获取初始化脚本路径"""
         if self.te_init_script:
             return self.te_init_script
-        return str(Path(__file__).resolve().parents[1] / "core" / "te_init.sh")
+        # 不使用 resolve()，避免穿透软链后指向源码目录而非安装目录
+        return str(Path(__file__).parent.parent / "core" / "te_init.sh")
     
     def validate(self) -> Tuple[bool, List[str]]:
         """验证配置有效性

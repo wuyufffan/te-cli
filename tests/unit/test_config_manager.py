@@ -77,6 +77,25 @@ def test_config_get_init_script():
     assert 'core' in script_path
 
 
+def test_config_get_init_script_keeps_symlink_style_path(tmp_path, monkeypatch):
+    """回归：默认路径计算不应通过 resolve() 穿透软链"""
+    real_root = tmp_path / "real" / "te-cli"
+    symlink_root = tmp_path / "link" / "te-cli"
+    (real_root / "core").mkdir(parents=True)
+    (symlink_root.parent).mkdir(parents=True)
+    symlink_root.symlink_to(real_root, target_is_directory=True)
+
+    fake_module_file = symlink_root / "core" / "config_manager.py"
+    monkeypatch.setattr(cm, "__file__", str(fake_module_file), raising=True)
+
+    config = Config()
+    config.te_init_script = ''
+    script_path = Path(config.get_init_script())
+
+    assert script_path == symlink_root / "core" / "te_init.sh"
+    assert str(script_path).startswith(str(symlink_root))
+
+
 def test_config_validate_success(tmp_path):
     cfg = Config(te_path=str(tmp_path), dtk_base=str(tmp_path / "dtk"))
     with patch('os.path.isdir') as mock_isdir, patch('os.path.isfile') as mock_isfile:
