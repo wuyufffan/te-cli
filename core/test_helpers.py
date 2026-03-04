@@ -78,14 +78,15 @@ fi
 """.strip()
 
 
-def run_l0cpp(args: Optional[Iterable[str]] = None) -> int:
+def run_l0cpp(gpu: Optional[str] = None, args: Optional[Iterable[str]] = None) -> int:
     """运行 L0 C++ 单元测试"""
     config = get_config()
     log_file = config.log_files["l0cpp"]
     
+    gpu_export = f'export HIP_VISIBLE_DEVICES="{gpu}"\n' if gpu is not None else ""
     script = f"""
 {_conda_activation()}
-export TE_PATH={config.te_path}
+{gpu_export}export TE_PATH={config.te_path}
 bash {config.te_path}/qa/L0_cppunittest/test.sh
 """
     
@@ -100,14 +101,15 @@ bash {config.te_path}/qa/L0_cppunittest/test.sh
     )
 
 
-def run_l0torch(args: Optional[Iterable[str]] = None) -> int:
+def run_l0torch(gpu: Optional[str] = None, args: Optional[Iterable[str]] = None) -> int:
     """运行 L0 PyTorch 单元测试"""
     config = get_config()
     log_file = config.log_files["l0torch"]
     
+    gpu_export = f'export HIP_VISIBLE_DEVICES="{gpu}"\n' if gpu is not None else ""
     script = f"""
 {_conda_activation()}
-export TE_PATH={config.te_path}
+{gpu_export}export TE_PATH={config.te_path}
 bash {config.te_path}/qa/L0_pytorch_unittest/test.sh
 """
     
@@ -122,13 +124,14 @@ bash {config.te_path}/qa/L0_pytorch_unittest/test.sh
     )
 
 
-def run_l1torch(args: Optional[Iterable[str]] = None) -> int:
+def run_l1torch(gpu: Optional[str] = None, args: Optional[Iterable[str]] = None) -> int:
     """运行 L1 PyTorch 分布式测试"""
     config = get_config()
     log_file = config.log_files["l1torch"]
     
+    gpu_export = f'export HIP_VISIBLE_DEVICES="{gpu}"\n' if gpu is not None else ""
     script = f"""
-export TE_PATH={config.te_path}
+{gpu_export}export TE_PATH={config.te_path}
 bash {config.te_path}/qa/L1_pytorch_distributed_unittest/test.sh
 """
     

@@ -103,6 +103,9 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     parser.add_argument('-0', '--l0', action='store_true', help='L0 测试')
     parser.add_argument('-1', '--l1', action='store_true', help='L1 测试')
     
+    # 资源管理
+    parser.add_argument('-g', '--gpu', type=str, help='指定运行的 GPU (例如 "3" 或 "5,6")')
+    
     # 进程管理
     parser.add_argument('-p', '--process', action='store_true', help='查看进程')
     parser.add_argument('-s', '--status', action='store_true', help='环境状态')
@@ -196,14 +199,14 @@ def route_test_command(args: argparse.Namespace) -> int:
                 return view_log("l0cpp")
             if args.kill:
                 return kill_test_task("qa/L0_cppunittest/test.sh", "L0 CPP Test")
-            return run_l0cpp()
+            return run_l0cpp(gpu=args.gpu)
         
         if args.test:  # PyTorch 测试
             if args.log:
                 return view_log("l0torch")
             if args.kill:
                 return kill_test_task("qa/L0_pytorch_unittest/test.sh", "L0 Torch Test")
-            return run_l0torch()
+            return run_l0torch(gpu=args.gpu)
     
     # L1 测试
     if args.l1 and args.test:
@@ -211,7 +214,7 @@ def route_test_command(args: argparse.Namespace) -> int:
             return view_log("l1torch")
         if args.kill:
             return kill_test_task("qa/L1_pytorch_distributed_unittest/test.sh", "L1 Torch Test")
-        return run_l1torch()
+        return run_l1torch(gpu=args.gpu)
     
     return print_help()
 
