@@ -1,23 +1,12 @@
 # te-cli
 
-TransformerEngine (TE) 开发工具集，专为 AMD ROCm/HIP 平台设计。
+TransformerEngine 开发命令行工具，聚焦构建、测试与任务管理。
 
-## 功能特性
+## 仓库定位
 
-- **编译构建**：支持 Python 和 C++ 的增量/全量编译、智能重建
-- **测试运行**：支持 L0/L1 级别测试（C++、PyTorch、分布式）
-- **进程管理**：查看运行中的任务、查看日志、终止任务
-- **环境检查**：自动检测 TE 环境依赖
-
-## 快速开始
-
-```bash
-# 首次运行配置 TE 路径
-te --help
-
-# 查看所有可用命令
-te -h
-```
+- 面向 TE 开发/调试流程，统一构建与测试入口。
+- 提供 Python/C++ 构建、L0/L1 测试、日志与任务管理能力。
+- 本仓库是 te 的功能与参数说明唯一来源。
 
 ## 安装
 
@@ -29,16 +18,39 @@ cd te-cli
 ./install.sh
 ```
 
-### 作为 my_linux_config 的一部分
+### 通过主仓安装
 
 ```bash
 cd ~/my_linux_config
-./install.sh --with-te
+make install C=te
+```
+
+## 快速使用
+
+```bash
+te -h            # 查看完整帮助
+te --version     # 查看版本
+te --check-env   # 检查环境依赖
+
+# 构建
+te -b -c         # Python 构建
+te -b -t         # C++ 构建
+
+# 测试
+te -0 -t         # L0 测试
+te -1 -t         # L1 测试
+
+# 任务/日志
+te -p            # 查看任务
+te -p -l         # 查看日志
 ```
 
 ## 配置
 
-配置文件保存在 `~/.te_config.json`：
+- 配置文件：`~/.te_config.json`
+- 首次建议先执行：`te --check-env`
+
+示例：
 
 ```json
 {
@@ -46,29 +58,20 @@ cd ~/my_linux_config
 }
 ```
 
-## 系统要求
+## 运行要求
 
 - Python 3.10+
 - CMake 3.20+
 - Ninja
-- AMD ROCm/DTK 25.04.2 或 26.04
+- ROCm/DTK 环境（按实际平台版本）
 
-## 项目结构
+## 开发与测试
 
-```
-te-cli/
-├── core/               # 核心代码
-│   ├── cli.py         # 命令行入口
-│   ├── build_helpers.py
-│   ├── test_helpers.py
-│   └── ...
-├── tests/              # 测试套件
-│   ├── unit/
-│   └── integration/
-├── install.sh          # 安装脚本
-└── README.md
+```bash
+python3 -m pytest tests/unit -q
+python3 -m pytest --cov=core --cov-report=term-missing tests/
 ```
 
 ## 许可证
 
-MIT License
+MIT
