@@ -2,12 +2,9 @@
 """
 process_helpers 模块单元测试
 """
-import sys
-from pathlib import Path
 from unittest.mock import patch, MagicMock
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "te_python"))
 import process_helpers
 
 

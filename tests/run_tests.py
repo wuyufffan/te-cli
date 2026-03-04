@@ -51,7 +51,7 @@ def run_tests_with_coverage():
     print("=" * 60)
     result = subprocess.run(
         [sys.executable, "-m", "pytest", "tests/unit/",
-         "--cov=te_python", "--cov-report=term-missing",
+         "--cov=core", "--cov-report=term-missing",
          "--cov-fail-under=80"],
         cwd=Path(__file__).parent.parent
     )

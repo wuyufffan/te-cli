@@ -5,14 +5,9 @@
 
 import json
 import os
-import sys
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-
-# 确保可以导入 te_python 模块
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "te_python"))
 
 from install_config import (
     check_installation,

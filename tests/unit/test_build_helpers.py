@@ -7,7 +7,6 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "te_python"))
 import build_helpers
 
 

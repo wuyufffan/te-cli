@@ -2,13 +2,10 @@
 """
 common_utils 模块单元测试
 """
-import sys
 import subprocess
-from pathlib import Path
 from unittest.mock import patch
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "te_python"))
 import common_utils
 
 

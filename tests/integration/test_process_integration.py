@@ -4,14 +4,11 @@
 真实创建和管理进程
 """
 import os
-import sys
 import subprocess
 import time
 import signal
-from pathlib import Path
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "te_python"))
 import common_utils
 import process_helpers
 

@@ -6,7 +6,6 @@ import sys
 import pytest
 from unittest.mock import patch, MagicMock
 
-sys.path.insert(0, str(__import__('pathlib').Path(__file__).parent.parent.parent / "te_python"))
 import cli
 
 
@@ -23,6 +22,8 @@ def mock_helpers():
     """Mock 所有 helper 函数"""
     mocks = {
         "print_help": MagicMock(return_value=0),
+        "init_config": MagicMock(return_value=None),
+        "setup_logging": MagicMock(return_value=None),
         "show_processes": MagicMock(return_value=0),
         "check_te": MagicMock(return_value=0),
         "kill_build_task": MagicMock(return_value=0),

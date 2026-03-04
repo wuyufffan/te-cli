@@ -4,14 +4,11 @@
 真实执行 CMake 命令
 """
 import os
-import sys
 import subprocess
 import tempfile
 import shutil
 from pathlib import Path
 import pytest
-
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "te_python"))
 
 
 # =============================================================================

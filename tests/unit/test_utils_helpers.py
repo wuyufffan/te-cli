@@ -3,14 +3,10 @@
 utils_helpers 模块单元测试
 """
 import subprocess
-import sys
-from pathlib import Path
 from unittest.mock import patch, MagicMock
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "te_python"))
 import utils_helpers
-from config import LOG_FILE_PY, LOG_FILE_CPP, LOG_FILE_L0_CPP
 
 
 @pytest.mark.unit
