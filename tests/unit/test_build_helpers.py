@@ -44,6 +44,74 @@ class TestScriptGeneration:
         assert "rm -f build/CMakeCache.txt" not in script
         assert "rm -rf" not in script
 
+    def test_rebuild_script_phase1_contains_pythonpath(self):
+        """Rebuild Phase 1 应包含 hipify_torch PYTHONPATH"""
+        script = build_helpers._rebuild_script("/init.sh", "/fake/te", "")
+        assert "PYTHONPATH" in script
+        assert "3rdparty/hipify_torch" in script
+
+    def test_rebuild_script_phase1_contains_pip_install(self):
+        """Rebuild Phase 1 应包含 pip 增量构建命令"""
+        script = build_helpers._rebuild_script("/init.sh", "/fake/te", "")
+        assert "python3 -m pip install" in script
+        assert "--no-build-isolation" in script
+
+    def test_rebuild_script_phase2_contains_cmake_params(self):
+        """Rebuild Phase 2 应包含 HIP/HSA/COMPILER_AR 参数"""
+        script = build_helpers._rebuild_script("/init.sh", "/fake/te", "")
+        assert "-DHIP_CLANG_INCLUDE_PATH=\"$HIP_CLANG_INCLUDE_PATH\"" in script
+        assert "-DHSA_HEADER=\"$HSA_HEADER\"" in script
+        assert "$EXTRA_AR" in script
+
+    def test_rebuild_script_contains_required_env_vars(self):
+        """Rebuild 脚本应继承公共环境变量"""
+        script = build_helpers._rebuild_script("/init.sh", "/fake/te", "")
+        assert "NVTE_FRAMEWORK=pytorch" in script
+        assert "NVTE_USE_ROCM=1" in script
+        assert "CXX=hipcc" in script
+
+
+@pytest.mark.unit
+@pytest.mark.build
+class TestScriptConsistency:
+    """测试组合脚本与子脚本的一致性"""
+
+    def test_rebuild_phase1_consistent_with_python_build(self):
+        """Rebuild Phase 1 与 Python 构建关键参数保持一致"""
+        py_script = build_helpers._python_build_script("/init.sh", clean=False)
+        rebuild_script = build_helpers._rebuild_script("/init.sh", "/fake/te", "")
+
+        assert "3rdparty/hipify_torch" in py_script
+        assert "3rdparty/hipify_torch" in rebuild_script
+        assert "-vv --no-build-isolation" in py_script
+        assert "-vv --no-build-isolation" in rebuild_script
+
+    def test_rebuild_phase2_consistent_with_cpp_build(self):
+        """Rebuild Phase 2 与 C++ 构建关键参数保持一致"""
+        cpp_script = build_helpers._cpp_build_script("/init.sh")
+        rebuild_script = build_helpers._rebuild_script("/init.sh", "/fake/te", "")
+
+        for key in [
+            "-DHIP_CLANG_INCLUDE_PATH=\"$HIP_CLANG_INCLUDE_PATH\"",
+            "-DHSA_HEADER=\"$HSA_HEADER\"",
+            "$EXTRA_AR",
+        ]:
+            assert key in cpp_script
+            assert key in rebuild_script
+
+    def test_full_build_phase2_consistent_with_cpp_build(self):
+        """Full Build Phase 2 与 C++ 构建关键参数保持一致"""
+        cpp_script = build_helpers._cpp_build_script("/init.sh")
+        full_script = build_helpers._full_build_script("/init.sh", "/fake/te")
+
+        for key in [
+            "-DHIP_CLANG_INCLUDE_PATH=\"$HIP_CLANG_INCLUDE_PATH\"",
+            "-DHSA_HEADER=\"$HSA_HEADER\"",
+            "$EXTRA_AR",
+        ]:
+            assert key in cpp_script
+            assert key in full_script
+
 
 # =============================================================================
 # 构建启动测试 - 使用公共参数化

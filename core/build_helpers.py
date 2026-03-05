@@ -282,7 +282,14 @@ py_status=$?
 if [ $py_status -eq 0 ]; then
     echo "🚀 Building C++ Tests..."
     cd "{target_path}/tests/cpp" || exit 2
-    cmake -GNinja -Bbuild . 2>&1
+    EXTRA_AR=""
+    if [ -x "$DTK_BASE/dcc/bin/llvm-ar" ]; then
+        EXTRA_AR="-DCMAKE_CXX_COMPILER_AR=$DTK_BASE/dcc/bin/llvm-ar -DCMAKE_HIP_COMPILER_AR=$DTK_BASE/dcc/bin/llvm-ar -DCMAKE_C_COMPILER_AR=$DTK_BASE/dcc/bin/llvm-ar"
+    fi
+    cmake -GNinja -Bbuild . \
+        -DHIP_CLANG_INCLUDE_PATH="$HIP_CLANG_INCLUDE_PATH" \
+        -DHSA_HEADER="$HSA_HEADER" \
+        $EXTRA_AR 2>&1
     cmake --build build 2>&1
 else
     echo "Python Build Failed"
@@ -338,13 +345,24 @@ done
 
 echo "=== [Phase 1] Python Incremental Build ==="
 cd "{te_path}" || exit 1
-python3 -m pip install --no-build-isolation -v -e . 2>&1
+export PYTHONPATH="{te_path}/3rdparty/hipify_torch:$PYTHONPATH"
+python3 -m pip install -e . -vv --no-build-isolation 2>&1
 py_status=$?
 
 if [ $py_status -eq 0 ]; then
      echo "=== [Phase 2] C++ Tests Incremental Build ==="
      cd "{te_path}/tests/cpp" || exit 1
-     cmake -B build -G Ninja . 2>&1
+     export PYTHONPATH="{te_path}/3rdparty/hipify_torch:$PYTHONPATH"
+
+     EXTRA_AR=""
+     if [ -x "$DTK_BASE/dcc/bin/llvm-ar" ]; then
+         EXTRA_AR="-DCMAKE_CXX_COMPILER_AR=$DTK_BASE/dcc/bin/llvm-ar -DCMAKE_HIP_COMPILER_AR=$DTK_BASE/dcc/bin/llvm-ar -DCMAKE_C_COMPILER_AR=$DTK_BASE/dcc/bin/llvm-ar"
+     fi
+
+     cmake -B build -G Ninja . \
+         -DHIP_CLANG_INCLUDE_PATH="$HIP_CLANG_INCLUDE_PATH" \
+         -DHSA_HEADER="$HSA_HEADER" \
+         $EXTRA_AR 2>&1
      cmake --build build 2>&1
 else
     echo "Python build failed."

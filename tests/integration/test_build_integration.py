@@ -158,6 +158,38 @@ class TestBuildScriptGeneration:
             text=True
         )
         assert result.returncode == 0, f"脚本语法错误: {result.stderr}"
+
+    def test_rebuild_script_syntax(self, tmp_path):
+        """测试 Rebuild 脚本语法正确"""
+        import core.build_helpers as build_helpers
+
+        script = build_helpers._rebuild_script("/tmp/init.sh", "/tmp/TransformerEngine", "")
+
+        script_file = tmp_path / "rebuild_script.sh"
+        script_file.write_text(script)
+
+        result = subprocess.run(
+            ["bash", "-n", str(script_file)],
+            capture_output=True,
+            text=True
+        )
+        assert result.returncode == 0, f"脚本语法错误: {result.stderr}"
+
+    def test_full_build_script_syntax(self, tmp_path):
+        """测试 Full Build 脚本语法正确"""
+        import core.build_helpers as build_helpers
+
+        script = build_helpers._full_build_script("/tmp/init.sh", "/tmp/TransformerEngine")
+
+        script_file = tmp_path / "full_build_script.sh"
+        script_file.write_text(script)
+
+        result = subprocess.run(
+            ["bash", "-n", str(script_file)],
+            capture_output=True,
+            text=True
+        )
+        assert result.returncode == 0, f"脚本语法错误: {result.stderr}"
     
     def test_script_contains_all_exports(self):
         """测试脚本包含所有必要的环境变量导出"""
