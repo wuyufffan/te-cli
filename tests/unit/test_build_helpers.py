@@ -70,6 +70,36 @@ class TestScriptGeneration:
         assert "NVTE_USE_ROCM=1" in script
         assert "CXX=hipcc" in script
 
+    def test_all_scripts_deactivate_venv(self):
+        """所有构建脚本都应包含 venv 反激活逻辑"""
+        scripts = [
+            build_helpers._python_build_script("/init.sh", clean=False),
+            build_helpers._python_build_script("/init.sh", clean=True),
+            build_helpers._cpp_build_script("/init.sh"),
+            build_helpers._rebuild_script("/init.sh", "/fake/te", ""),
+            build_helpers._full_build_script("/init.sh", "/fake/te"),
+        ]
+
+        for script in scripts:
+            assert "VIRTUAL_ENV" in script
+            assert "deactivate" in script
+
+    def test_venv_deactivation_before_init_script(self):
+        """venv 反激活逻辑应在 source init 脚本之前"""
+        script = build_helpers._build_script_header("/init.sh")
+        deactive_pos = script.find("if [ -n \"${VIRTUAL_ENV:-}\" ]; then")
+        source_pos = script.find('source "$INIT_SCRIPT"')
+
+        assert deactive_pos != -1
+        assert source_pos != -1
+        assert deactive_pos < source_pos
+
+    def test_venv_manual_path_strip_fallback(self):
+        """deactivate 不可用时应有 PATH 清理兜底逻辑"""
+        script = build_helpers._build_script_header("/init.sh")
+        assert "grep -v \"$VIRTUAL_ENV\"" in script
+        assert "unset VIRTUAL_ENV" in script
+
 
 @pytest.mark.unit
 @pytest.mark.build

@@ -104,6 +104,19 @@ def _build_script_header(init_script: str) -> str:
     return f"""
 start_time=$(date +%s)
 
+# Deactivate any active virtualenv so we always use the system Python
+# (which has the ROCm-enabled torch).
+if [ -n "${{VIRTUAL_ENV:-}}" ]; then
+    echo "⚠️  Deactivating virtualenv: $VIRTUAL_ENV"
+    if type deactivate &>/dev/null; then
+        deactivate
+    else
+        # Manual deactivation: strip venv bin from PATH
+        PATH=$(echo "$PATH" | tr ':' '\\n' | grep -v "$VIRTUAL_ENV" | paste -sd:)
+        unset VIRTUAL_ENV
+    fi
+fi
+
 INIT_SCRIPT="{init_script}"
 
 if [ -f "$INIT_SCRIPT" ]; then
