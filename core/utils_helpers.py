@@ -6,7 +6,9 @@ import logging
 import os
 import shutil
 import subprocess
+import sys
 
+from . import __version__
 from .config import CYAN, GREEN, GREY, RED, RESET
 from .config_manager import get_config
 
@@ -59,6 +61,7 @@ def check_te() -> int:
     config = get_config()
     
     print(f"{GREEN}🔍 TE Environment Check{RESET}")
+    print(f"   {GREY}├─ TE CLI Version:{RESET} {CYAN}v{__version__}{RESET}")
     
     # 1. Python Build Artifact
     print(f"   {GREY}├─ [1] Python Build Artifact:{RESET}")
@@ -107,14 +110,20 @@ def _check_cpp_artifact(te_path: str) -> None:
 
 def _check_python_import() -> None:
     """检查 Python 导入"""
-    check_cmd = [
-        "python3", "-c",
-        "import sys; import transformer_engine; print(transformer_engine.__file__)"
-    ]
+    import_cmd = "import sys; import transformer_engine; print(transformer_engine.__file__)"
+    check_cmd = [sys.executable, "-c", import_cmd]
     
     try:
         result = subprocess.run(check_cmd, capture_output=True, text=True)
-        
+
+        # If running inside a venv and import fails, retry with system python.
+        if (
+            result.returncode != 0
+            and os.environ.get("VIRTUAL_ENV")
+            and sys.executable != "/usr/bin/python3"
+        ):
+            result = subprocess.run(["/usr/bin/python3", "-c", import_cmd], capture_output=True, text=True)
+
         if result.returncode == 0:
             loc_out = result.stdout.rstrip("\n")
             if result.stderr:

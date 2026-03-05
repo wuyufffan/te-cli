@@ -79,6 +79,22 @@ class TestViewLog:
 @pytest.mark.unit
 class TestCheckTe:
     """测试 check_te 函数"""
+
+    def test_check_te_shows_version(self, capsys):
+        with patch("subprocess.check_output") as check, \
+             patch("subprocess.run") as run:
+            check.side_effect = subprocess.CalledProcessError(1, "find")
+
+            result = MagicMock()
+            result.returncode = 1
+            result.stdout = ""
+            result.stderr = ""
+            run.return_value = result
+
+            assert utils_helpers.check_te() == 0
+            captured = capsys.readouterr()
+            assert "TE CLI Version" in captured.out
+            assert f"v{utils_helpers.__version__}" in captured.out
     
     def test_check_te_no_artifacts(self, capsys):
         """没有构建产物"""
@@ -212,6 +228,16 @@ class TestArtifacts:
         assert "Success" in out
         assert "__init__.py" in out
 
+    def test_check_python_import_uses_sys_executable(self, capsys):
+        result = MagicMock(returncode=0, stdout="/tmp/te/__init__.py\n", stderr="")
+        with patch("subprocess.run", return_value=result) as run_mock:
+            utils_helpers._check_python_import()
+
+        call_args = run_mock.call_args[0][0]
+        assert call_args[0] == utils_helpers.sys.executable
+        out = capsys.readouterr().out
+        assert "Success" in out
+
     def test_check_python_import_failure(self, capsys):
         result = MagicMock(returncode=1, stdout="", stderr="boom")
         with patch("subprocess.run", return_value=result):
@@ -234,3 +260,34 @@ class TestArtifacts:
         out = capsys.readouterr().out
         assert "Success" in out
         assert "warning" in out
+
+    def test_check_python_import_fallback_to_system_python_when_in_venv(self, capsys):
+        fail_in_venv = MagicMock(returncode=1, stdout="", stderr="venv failed")
+        success_in_system = MagicMock(returncode=0, stdout="/system/te/__init__.py\n", stderr="")
+
+        with patch.dict("os.environ", {"VIRTUAL_ENV": "/workspace/.venv"}, clear=False), \
+             patch.object(utils_helpers.sys, "executable", "/workspace/.venv/bin/python3"), \
+             patch("subprocess.run", side_effect=[fail_in_venv, success_in_system]) as run_mock:
+            utils_helpers._check_python_import()
+
+        assert run_mock.call_count == 2
+        first_cmd = run_mock.call_args_list[0][0][0]
+        second_cmd = run_mock.call_args_list[1][0][0]
+        assert first_cmd[0] == "/workspace/.venv/bin/python3"
+        assert second_cmd[0] == "/usr/bin/python3"
+        out = capsys.readouterr().out
+        assert "Success" in out
+
+    def test_no_fallback_when_not_in_venv(self, capsys):
+        fail_once = MagicMock(returncode=1, stdout="", stderr="failed")
+
+        with patch.dict("os.environ", {}, clear=False), \
+             patch.object(utils_helpers.sys, "executable", "/usr/bin/python3"), \
+             patch("subprocess.run", return_value=fail_once) as run_mock:
+            utils_helpers._check_python_import()
+
+        assert run_mock.call_count == 1
+        first_cmd = run_mock.call_args_list[0][0][0]
+        assert first_cmd[0] == "/usr/bin/python3"
+        out = capsys.readouterr().out
+        assert "Import Failed" in out
