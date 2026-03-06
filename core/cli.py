@@ -61,6 +61,7 @@ def print_help() -> int:
     print(f"     {YELLOW}-s{RESET}           深度检查 TE 环境状态")
     print("")
     print(f"   {CYAN}其他选项:{RESET}")
+    print(f"     {YELLOW}-g, --gpu{RESET}   指定运行的 GPU (例如 \"3\" 或 \"5,6\")")
     print(f"     {YELLOW}-v{RESET}           显示版本信息")
     print(f"     {YELLOW}--check-env{RESET}   检查环境依赖")
     print(f"     {YELLOW}-V{RESET}           详细日志输出")
