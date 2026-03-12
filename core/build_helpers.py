@@ -104,18 +104,35 @@ def _build_script_header(init_script: str) -> str:
     return f"""
 start_time=$(date +%s)
 
-# Deactivate any active virtualenv so we always use the system Python
-# (which has the ROCm-enabled torch).
+# Always prefer the system Python that carries the ROCm-enabled torch.
+# Some shells prepend /workspace/.venv/bin into PATH without exporting VIRTUAL_ENV,
+# so we sanitize PATH explicitly instead of relying on `deactivate` only.
 if [ -n "${{VIRTUAL_ENV:-}}" ]; then
-    echo "⚠️  Deactivating virtualenv: $VIRTUAL_ENV"
+    echo "⚠️  Detected virtualenv: $VIRTUAL_ENV"
     if type deactivate &>/dev/null; then
         deactivate
     else
-        # Manual deactivation: strip venv bin from PATH
-        PATH=$(echo "$PATH" | tr ':' '\\n' | grep -v "$VIRTUAL_ENV" | paste -sd:)
-        unset VIRTUAL_ENV
+        PATH=$(echo "$PATH" | tr ':' '\n' | grep -v "$VIRTUAL_ENV" | paste -sd:)
     fi
 fi
+
+PATH=$(printf '%s' "$PATH" | tr ':' '\n' | grep -Fvx "/workspace/.venv/bin" | paste -sd:)
+if [ -n "${{VIRTUAL_ENV:-}}" ]; then
+    PATH=$(printf '%s' "$PATH" | tr ':' '\n' | grep -Fvx "$VIRTUAL_ENV/bin" | paste -sd:)
+fi
+unset VIRTUAL_ENV
+unset PYTHONHOME
+hash -r
+
+PYTHON_BIN="$(command -v python3 || true)"
+if [[ "$PYTHON_BIN" == /workspace/.venv/* ]] && [ -x /usr/bin/python3 ]; then
+    PYTHON_BIN="/usr/bin/python3"
+fi
+if [ -z "$PYTHON_BIN" ]; then
+    echo "❌ Error: python3 not found after PATH sanitization"
+    exit 1
+fi
+echo "🐍 Using Python: $PYTHON_BIN"
 
 INIT_SCRIPT="{init_script}"
 
