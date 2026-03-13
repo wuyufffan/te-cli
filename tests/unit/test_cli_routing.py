@@ -7,6 +7,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 
 import core.cli as cli
+from core.config_manager import TIMESTAMP_EXAMPLE
 
 
 @pytest.fixture(autouse=True)
@@ -22,6 +23,7 @@ def mock_helpers():
     """Mock 所有 helper 函数"""
     mocks = {
         "print_help": MagicMock(return_value=0),
+        "route_named_command": MagicMock(return_value=0),
         "init_config": MagicMock(return_value=None),
         "setup_logging": MagicMock(return_value=None),
         "show_processes": MagicMock(return_value=0),
@@ -57,6 +59,10 @@ class TestBasicCommands:
         """测试帮助参数（短格式和长格式）"""
         assert cli.main([flag]) == 0
         mock_helpers["print_help"].assert_called()
+
+    def test_help_subcommand(self, mock_helpers):
+        assert cli.main(["help"]) == 0
+        mock_helpers["route_named_command"].assert_called_once_with(["help"])
     
     def test_no_args_shows_help(self, mock_helpers):
         """无参数时显示帮助"""
@@ -287,6 +293,15 @@ class TestAdditionalBranches:
         mock_helpers["build_all_func"].assert_not_called()
         mock_helpers["print_help"].assert_called()
 
+    @pytest.mark.parametrize("argv", [
+        ["run", "l0cpp"],
+        ["log", "list"],
+        ["summary", "/tmp/test.log"],
+    ])
+    def test_named_commands_are_routed(self, mock_helpers, argv):
+        assert cli.main(argv) == 0
+        mock_helpers["route_named_command"].assert_called_once_with(argv)
+
 
 @pytest.mark.unit
 @pytest.mark.cli
@@ -295,21 +310,21 @@ def test_print_help_real_function_executes_lines(capsys):
     assert cli.print_help() == 0
     out = capsys.readouterr().out
     assert "TE 开发工具命令行" in out
-    assert "编译构建" in out
+    assert "快速上手" in out
+    assert "兼容入口" in out
+    assert TIMESTAMP_EXAMPLE in out
 
 
 @pytest.mark.unit
 @pytest.mark.cli
-def test_print_help_contains_build_semantics_lines(capsys):
-    # 锁定构建语义文案，防止后续回归漂移
+def test_print_help_contains_recommended_paths(capsys):
+    # 锁定根帮助的信息架构，防止再次退化成参数堆砌
     assert cli.print_help() == 0
     out = capsys.readouterr().out
-    assert "-b -c" in out and "编译 Python（增量）" in out
-    assert "-b -c -d" in out and "编译 Python（全量/clean）" in out
-    assert "-b -t" in out and "编译 C++ 测试（增量）" in out
-    assert "-b -t -d" in out and "清理并编译 C++ 测试" in out
-    assert "-b -r" in out and "增量重建（Python + C++ 增量）" in out
-    assert "-b -r -d" in out and "全量重建（Python + C++ clean 重建）" in out
+    assert "te run help" in out
+    assert f"te log list {TIMESTAMP_EXAMPLE}" in out
+    assert "te summary LOG [--detailed]" in out
+    assert "旧测试入口" in out
 
 
 @pytest.mark.unit

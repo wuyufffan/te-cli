@@ -10,7 +10,7 @@ import sys
 
 from . import __version__
 from .config import CYAN, GREEN, GREY, RED, RESET
-from .config_manager import get_config
+from .config_manager import TEST_LOG_TYPES, get_config
 
 logger = logging.getLogger(__name__)
 
@@ -25,10 +25,12 @@ def view_log(log_type: str) -> int:
         命令执行结果
     """
     config = get_config()
-    log_files = config.log_files
-    
-    file_path = log_files.get(log_type, "")
-    if not file_path:
+    if log_type in TEST_LOG_TYPES:
+        file_path = config.get_latest_test_log(log_type)
+    else:
+        file_path = config.log_files.get(log_type, "")
+
+    if log_type not in TEST_LOG_TYPES and not file_path:
         logger.error(f"未知日志类型: {log_type}")
         print(f"{RED}❌ Unknown log type: {log_type}{RESET}")
         return 1
@@ -46,8 +48,9 @@ def view_log(log_type: str) -> int:
             print(f"{GREY}Log tail stopped by user.{RESET}")
             return 0
     
-    logger.warning(f"日志文件不存在: {file_path}")
-    print(f"{RED}❌ Log file not found:{RESET} {file_path}")
+    logger.warning(f"日志文件不存在: {file_path or log_type}")
+    missing_path = file_path or str(config.get_logs_root())
+    print(f"{RED}❌ Log file not found:{RESET} {missing_path}")
     print(f"   {GREY}(Task might not have started yet){RESET}")
     return 0
 

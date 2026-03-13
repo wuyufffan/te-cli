@@ -7,7 +7,7 @@ from unittest.mock import mock_open, patch
 import pytest
 
 import core.config_manager as cm
-from core.config_manager import Config, get_config, init_config
+from core.config_manager import Config, TEST_LOG_TYPES, get_config, init_config
 
 def test_config_post_init():
     with patch('os.environ.get') as mock_env_get:
@@ -52,17 +52,84 @@ def test_config_log_level_int():
     assert config.log_level_int == logging.INFO  # Fallback to INFO
 
 @patch('socket.gethostname', return_value='test-host')
-def test_config_log_files(mock_gethostname):
-    config = Config(te_path='/my/te')
+def test_config_log_files(mock_gethostname, tmp_path):
+    config = Config(te_path='/my/te', work_space=str(tmp_path))
     log_files = config.log_files
     
     assert log_files['build_py'] == '/my/te/build_python_test-host.log'
     assert log_files['build_cpp'] == '/my/te/build_cpp_test-host.log'
     assert log_files['rebuild'] == '/my/te/rebuild_dev_test-host.log'
     assert log_files['build_all'] == '/my/te/build_all_test-host.log'
-    assert log_files['l0cpp'] == '/my/te/L0_cppunittest_test-host.log'
-    assert log_files['l0torch'] == '/my/te/L0_pytorch_unittest_test-host.log'
-    assert log_files['l1torch'] == '/my/te/L1_pytorch_distributed_unittest_test-host.log'
+    assert log_files['l0cpp'] == ''
+    assert log_files['l0torch'] == ''
+    assert log_files['l1torch'] == ''
+
+
+@patch('socket.gethostname', return_value='test-host')
+def test_get_test_log_filename(mock_gethostname):
+    config = Config()
+    assert config.get_test_log_filename('l0cpp') == 'L0_cppunittest_test-host.log'
+    assert config.get_test_log_filename('l0torch') == 'L0_pytorch_unittest_test-host.log'
+    assert config.get_test_log_filename('l1torch') == 'L1_pytorch_distributed_unittest_test-host.log'
+
+
+def test_get_test_log_path(tmp_path):
+    config = Config(work_space=str(tmp_path))
+    log_path = config.get_test_log_path('l0cpp', timestamp='20260312_120000')
+    expected = tmp_path / 'logs' / '20260312_120000' / 'l0cpp' / config.get_test_log_filename('l0cpp')
+    assert log_path == str(expected)
+
+
+def test_get_test_log_path_unknown_type():
+    config = Config()
+    with pytest.raises(ValueError):
+        config.get_test_log_path('unknown')
+
+
+def test_list_log_timestamps_and_logs(tmp_path):
+    config = Config(work_space=str(tmp_path))
+    logs_root = tmp_path / 'logs'
+    first = logs_root / '20260312_110000' / 'l0cpp'
+    second = logs_root / '20260312_120000' / 'l0cpp'
+    first.mkdir(parents=True)
+    second.mkdir(parents=True)
+    (first / 'a.log').write_text('a', encoding='utf-8')
+    (second / 'b.log').write_text('b', encoding='utf-8')
+
+    assert config.list_log_timestamps() == ['20260312_120000', '20260312_110000']
+    assert config.list_log_timestamps(limit=1) == ['20260312_120000']
+    assert config.list_logs_for_type('l0cpp', limit=1) == [str((second / 'b.log').resolve())]
+    assert config.get_latest_test_log('l0cpp') == str((second / 'b.log').resolve())
+
+
+def test_list_log_timestamps_supports_legacy_format(tmp_path):
+    config = Config(work_space=str(tmp_path))
+    logs_root = tmp_path / 'logs'
+    legacy = logs_root / '2026-03-12::11-00-00'
+    current = logs_root / '20260312_120000'
+    legacy.mkdir(parents=True)
+    current.mkdir(parents=True)
+
+    assert config.list_log_timestamps() == ['20260312_120000', '2026-03-12::11-00-00']
+
+
+def test_list_logs_in_timestamp(tmp_path):
+    config = Config(work_space=str(tmp_path))
+    ts_dir = tmp_path / 'logs' / '20260312_120000'
+    (ts_dir / 'l0cpp').mkdir(parents=True)
+    (ts_dir / 'l0torch').mkdir(parents=True)
+    log_a = ts_dir / 'l0cpp' / 'a.log'
+    log_b = ts_dir / 'l0torch' / 'b.log'
+    log_a.write_text('a', encoding='utf-8')
+    log_b.write_text('b', encoding='utf-8')
+
+    assert config.list_logs_in_timestamp('20260312_120000') == sorted([str(log_a.resolve()), str(log_b.resolve())])
+
+
+def test_list_logs_for_type_unknown_type():
+    config = Config()
+    with pytest.raises(ValueError):
+        config.list_logs_for_type('unknown')
 
 def test_config_get_init_script():
     # When te_init_script is set

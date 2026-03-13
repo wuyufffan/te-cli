@@ -18,10 +18,13 @@ from .build_helpers import (
     rebuild_dev,
 )
 from .config import CYAN, GREEN, GREY, RED, RESET, YELLOW
-from .config_manager import get_config, init_config
+from .config_manager import TIMESTAMP_EXAMPLE, init_config
 from .env_checker import check_environment
+from .log_command import route_log_command
 from .logger import setup_logging
 from .process_helpers import kill_build_task, kill_test_task, show_processes
+from .run_command import route_run_command
+from .summary_command import route_summary_command
 from .test_helpers import run_l0cpp, run_l0torch, run_l1torch
 from .utils_helpers import check_te, view_log
 
@@ -31,42 +34,48 @@ logger = logging.getLogger(__name__)
 def print_help() -> int:
     """打印帮助信息"""
     print(f"{GREEN}✅ TE 开发工具命令行 (TE CLI){RESET}")
-    print(f"   {GREY}用法:{RESET} te [简化参数组合]")
+    print(f"   {GREY}用法:{RESET} te <command> [args] | te [兼容 flag]")
     print("")
-    print(f"   {CYAN}编译构建:{RESET}")
-    print(f"     {YELLOW}-b -c{RESET}        编译 Python（增量）")
-    print(f"     {YELLOW}-b -c -d{RESET}     编译 Python（全量/clean）")
-    print(f"     {YELLOW}-b -c -l{RESET}     查看 Python 编译日志")
-    print(f"     {YELLOW}-b -t{RESET}        编译 C++ 测试（增量）")
-    print(f"     {YELLOW}-b -t -d{RESET}     清理并编译 C++ 测试")
-    print(f"     {YELLOW}-b -t -l{RESET}     查看 C++ 编译日志")
-    print(f"     {YELLOW}-b -r{RESET}        增量重建（Python + C++ 增量）")
-    print(f"     {YELLOW}-b -r -d{RESET}     全量重建（Python + C++ clean 重建）")
-    print(f"     {YELLOW}-b -r -l{RESET}     查看重建日志")
-    print(f"     {YELLOW}-b -k{RESET}        终止编译任务")
+    print(f"   {CYAN}快速上手:{RESET}")
+    print(f"     {YELLOW}te run{RESET}                 交互式选择并启动测试")
+    print(f"     {YELLOW}te log list{RESET}            查看最近日志时间戳目录")
+    print(f"     {YELLOW}te log list {TIMESTAMP_EXAMPLE}{RESET} 查看某次运行的全部日志")
+    print(f"     {YELLOW}te summary LOG{RESET}         生成 L0torch 失败摘要")
     print("")
-    print(f"   {CYAN}测试运行:{RESET}")
-    print(f"     {YELLOW}-0 -c{RESET}        L0 C++ 单元测试")
-    print(f"     {YELLOW}-0 -c -l{RESET}     查看 L0 C++ 测试日志")
-    print(f"     {YELLOW}-0 -c -k{RESET}     终止 L0 C++ 测试")
-    print(f"     {YELLOW}-0 -t{RESET}        L0 PyTorch 单元测试")
-    print(f"     {YELLOW}-0 -t -l{RESET}     查看 L0 PyTorch 测试日志")
-    print(f"     {YELLOW}-0 -t -k{RESET}     终止 L0 PyTorch 测试")
-    print(f"     {YELLOW}-1 -t{RESET}        L1 PyTorch 分布式测试")
-    print(f"     {YELLOW}-1 -t -l{RESET}     查看 L1 测试日志")
-    print(f"     {YELLOW}-1 -t -k{RESET}     终止 L1 测试")
+    print(f"   {CYAN}子命令帮助:{RESET}")
+    print(f"     {YELLOW}te run help{RESET}            查看测试运行帮助")
+    print(f"     {YELLOW}te log help{RESET}            查看日志浏览帮助")
+    print(f"     {YELLOW}te summary -h{RESET}          查看摘要生成帮助")
     print("")
-    print(f"   {CYAN}进程与状态:{RESET}")
-    print(f"     {YELLOW}-p{RESET}           查看所有运行中的任务")
-    print(f"     {YELLOW}-s{RESET}           深度检查 TE 环境状态")
+    print(f"   {CYAN}常用命令:{RESET}")
+    print(f"     {YELLOW}te run l0cpp|l0torch|l1torch|all{RESET}")
+    print(f"     {YELLOW}te log l0cpp -n 5{RESET} | {YELLOW}te log l0torch -n 5{RESET}")
+    print(f"     {YELLOW}te summary LOG [--detailed]{RESET}")
     print("")
-    print(f"   {CYAN}其他选项:{RESET}")
-    print(f"     {YELLOW}-g, --gpu{RESET}   指定运行的 GPU (例如 \"3\" 或 \"5,6\")")
-    print(f"     {YELLOW}-v{RESET}           显示版本信息")
-    print(f"     {YELLOW}--check-env{RESET}   检查环境依赖")
-    print(f"     {YELLOW}-V{RESET}           详细日志输出")
-    print(f"     {YELLOW}-h{RESET}           显示此帮助")
+    print(f"   {CYAN}兼容入口:{RESET}")
+    print(f"     {YELLOW}-0 -c{RESET} / {YELLOW}-0 -t{RESET} / {YELLOW}-1 -t{RESET}  旧测试入口")
+    print(f"     {YELLOW}-b -c{RESET} / {YELLOW}-b -t{RESET} / {YELLOW}-b -r{RESET}  旧构建入口")
+    print("")
+    print(f"   {CYAN}状态与通用选项:{RESET}")
+    print(f"     {YELLOW}-p{RESET} 查看任务  {YELLOW}-s{RESET} 查看状态  {YELLOW}--check-env{RESET} 检查环境")
+    print(f"     {YELLOW}-g, --gpu{RESET} 指定 GPU  {YELLOW}-v{RESET} 版本  {YELLOW}-V{RESET} 详细日志  {YELLOW}-h{RESET} 帮助")
     return 0
+
+
+def route_named_command(argv: List[str]) -> int:
+    """路由 te 子命令。"""
+    command = argv[0]
+    sub_argv = argv[1:]
+
+    if command == "help":
+        return print_help()
+    if command == "run":
+        return route_run_command(sub_argv)
+    if command == "log":
+        return route_log_command(sub_argv)
+    if command == "summary":
+        return route_summary_command(sub_argv)
+    return print_help()
 
 
 def parse_args(argv: List[str]) -> argparse.Namespace:
@@ -274,10 +283,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     if argv is None:
         argv = sys.argv[1:]
     
-    # 快速检查是否需要帮助或环境检查（在完整解析前）
-    if not argv or '-h' in argv or '--help' in argv:
+    # 快速检查根帮助
+    if not argv:
         return print_help()
-    
+
     # 检查详细日志模式
     verbose = '-V' in argv or '--verbose' in argv
     
@@ -288,6 +297,14 @@ def main(argv: Optional[List[str]] = None) -> int:
     logger.debug(f"命令行参数: {argv}")
     
     try:
+        if argv[0] in {"help", "run", "log", "summary"}:
+            result = route_named_command(argv)
+            logger.debug(f"命令执行结果: {result}")
+            return result
+
+        if '-h' in argv or '--help' in argv:
+            return print_help()
+
         # 解析参数
         args = parse_args(argv)
         

@@ -31,19 +31,45 @@ make install C=te
 te -h            # 查看完整帮助
 te --version     # 查看版本
 te --check-env   # 检查环境依赖
+te run help      # 查看测试帮助
+te log help      # 查看日志帮助
+te summary -h    # 查看 summary 帮助
+
+# 推荐路径
+te run           # 交互式选择测试
+te log list      # 查看日志时间戳目录
+te log list 20260313_091738
+te summary /workspace/logs/20260313_091738/l0torch/L0_pytorch_unittest_nmz76.log
+
+# 测试
+te -0 -t         # L0 测试
+te -1 -t         # L1 测试
+te run l0cpp     # L0 C++ 测试
+te run l0torch   # L0 PyTorch 测试
+te run l1torch   # L1 PyTorch 分布式测试
+te run all       # 一次启动三个测试
 
 # 构建
 te -b -c         # Python 构建
 te -b -t         # C++ 构建
 
-# 测试
-te -0 -t         # L0 测试
-te -1 -t         # L1 测试
-
 # 任务/日志
 te -p            # 查看任务
-te -p -l         # 查看日志
+te log           # 查看日志帮助
+te log help      # 查看日志帮助
+te log list      # 查看日志时间戳目录
+te log list 20260313_091738
+te log l0torch -n 5
 ```
+
+## 测试日志目录
+
+- 时间戳目录格式：`YYYYMMDD_HHMMSS`，例如 `20260313_091738`
+- L0 C++: `/workspace/logs/20260313_091738/l0cpp/L0_cppunittest_HOST.log`
+- L0 PyTorch: `/workspace/logs/20260313_091738/l0torch/L0_pytorch_unittest_HOST.log`
+- L1 PyTorch: `/workspace/logs/20260313_091738/l1torch/L1_pytorch_distributed_unittest_HOST.log`
+
+旧命令 `te -0 -c`、`te -0 -t`、`te -1 -t` 仍可继续使用，`-l` 会自动打开对应类型最新一条日志。
 
 ## 配置
 

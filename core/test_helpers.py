@@ -54,6 +54,8 @@ def _start_test(
     
     logger.info(f"启动测试: {task_name}")
     logger.debug(f"日志文件: {log_file}")
+
+    Path(log_file).parent.mkdir(parents=True, exist_ok=True)
     
     with open(log_file, "w", encoding="utf-8") as log_handle:
         subprocess.Popen(
@@ -82,7 +84,7 @@ fi
 def run_l0cpp(gpu: Optional[str] = None, args: Optional[Iterable[str]] = None) -> int:
     """运行 L0 C++ 单元测试"""
     config = get_config()
-    log_file = config.log_files["l0cpp"]
+    log_file = config.get_test_log_path("l0cpp")
     
     gpu_export = f'export HIP_VISIBLE_DEVICES="{gpu}"\n' if gpu is not None else ""
     script = f"""
@@ -105,7 +107,7 @@ bash {config.te_path}/qa/L0_cppunittest/test.sh
 def run_l0torch(gpu: Optional[str] = None, args: Optional[Iterable[str]] = None) -> int:
     """运行 L0 PyTorch 单元测试"""
     config = get_config()
-    log_file = config.log_files["l0torch"]
+    log_file = config.get_test_log_path("l0torch")
     
     gpu_export = f'export HIP_VISIBLE_DEVICES="{gpu}"\n' if gpu is not None else ""
     script = f"""
@@ -128,7 +130,7 @@ bash {config.te_path}/qa/L0_pytorch_unittest/test.sh
 def run_l1torch(gpu: Optional[str] = None, args: Optional[Iterable[str]] = None) -> int:
     """运行 L1 PyTorch 分布式测试"""
     config = get_config()
-    log_file = config.log_files["l1torch"]
+    log_file = config.get_test_log_path("l1torch")
     
     gpu_export = f'export HIP_VISIBLE_DEVICES="{gpu}"\n' if gpu is not None else ""
     script = f"""

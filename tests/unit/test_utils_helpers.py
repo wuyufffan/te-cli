@@ -3,10 +3,12 @@
 utils_helpers 模块单元测试
 """
 import subprocess
+from pathlib import Path
 from unittest.mock import patch, MagicMock
 import pytest
 
 import core.utils_helpers as utils_helpers
+from core.config_manager import Config
 
 
 @pytest.mark.unit
@@ -26,6 +28,19 @@ class TestViewLog:
             assert utils_helpers.view_log("build_py") == 0
             captured = capsys.readouterr()
             assert "not found" in captured.out.lower()
+
+    def test_view_test_log_uses_latest_timestamped_path(self, tmp_path):
+        cfg = Config(work_space=str(tmp_path), te_path=str(tmp_path / "TransformerEngine"))
+        log_dir = tmp_path / "logs" / "2026-03-12::12-00-00" / "l0cpp"
+        log_dir.mkdir(parents=True)
+        log_file = log_dir / "L0_cppunittest_test.log"
+        log_file.write_text("hello", encoding="utf-8")
+
+        with patch("core.utils_helpers.get_config", return_value=cfg), \
+             patch("shutil.which", return_value=None), \
+             patch("subprocess.call", return_value=0) as call:
+            assert utils_helpers.view_log("l0cpp") == 0
+            assert str(log_file.resolve()) in call.call_args[0][0]
     
     def test_view_log_success_with_less(self):
         """成功查看日志 (支持 less)"""
@@ -64,7 +79,7 @@ class TestViewLog:
             call.side_effect = KeyboardInterrupt()
             assert utils_helpers.view_log("build_py") == 0
     
-    @pytest.mark.parametrize("log_type", ["build_py", "build_cpp", "rebuild", "build_all", "l0cpp", "l0torch", "l1torch"])
+    @pytest.mark.parametrize("log_type", ["build_py", "build_cpp", "rebuild", "build_all"])
     def test_all_log_types(self, log_type):
         """测试所有日志类型映射"""
         with patch("os.path.isfile") as mock, \

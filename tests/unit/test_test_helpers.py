@@ -3,16 +3,22 @@
 test_helpers 模块单元测试
 """
 from unittest.mock import patch, MagicMock
+from pathlib import Path
 import pytest
 
 import core.test_helpers as test_helpers
+from core.config_manager import Config
 
 
 @pytest.fixture
-def common_test_mocks():
+def common_test_mocks(tmp_path):
     """提供通用 mock 设置"""
+    te_root = tmp_path / "TransformerEngine"
+    te_root.mkdir()
+    cfg = Config(te_path=str(te_root), work_space=str(tmp_path))
     with patch("core.test_helpers.check_task_running") as check, \
          patch("core.test_helpers.confirm_if_log_exists") as confirm, \
+         patch("core.test_helpers.get_config", return_value=cfg) as get_config, \
          patch("os.path.isdir") as isdir, \
          patch("subprocess.Popen") as popen:
         
@@ -26,8 +32,10 @@ def common_test_mocks():
         yield {
             "check": check,
             "confirm": confirm,
+            "get_config": get_config,
             "isdir": isdir,
             "popen": popen,
+            "config": cfg,
         }
 
 
@@ -75,3 +83,15 @@ class TestTestOperations:
         else:
             script = call_args[1].get('args', ['', '', '', ''])[3]
         assert expected_script in script
+
+    @pytest.mark.parametrize("func,log_type", [
+        (test_helpers.run_l0cpp, "l0cpp"),
+        (test_helpers.run_l0torch, "l0torch"),
+        (test_helpers.run_l1torch, "l1torch"),
+    ])
+    def test_test_functions_create_timestamped_logs(self, common_test_mocks, func, log_type):
+        assert func() == 0
+        expected_root = Path(common_test_mocks["config"].work_space) / "logs"
+        created_logs = list(expected_root.rglob("*.log"))
+        assert len(created_logs) == 1
+        assert created_logs[0].parent.name == log_type
