@@ -38,6 +38,8 @@ def mock_helpers():
         "run_l0cpp": MagicMock(return_value=0),
         "run_l0torch": MagicMock(return_value=0),
         "run_l1torch": MagicMock(return_value=0),
+        "route_build_named_command": MagicMock(return_value=0),
+        "route_rebuild_named_command": MagicMock(return_value=0),
         "view_log": MagicMock(return_value=0),
         "kill_test_task": MagicMock(return_value=0),
     }
@@ -296,7 +298,9 @@ class TestAdditionalBranches:
     @pytest.mark.parametrize("argv", [
         ["run", "l0cpp"],
         ["log", "list"],
-        ["summary", "/tmp/test.log"],
+        ["build", "py"],
+        ["rebuild", "cpp"],
+        ["sum", "/tmp/test.log"],
     ])
     def test_named_commands_are_routed(self, mock_helpers, argv):
         assert cli.main(argv) == 0
@@ -322,9 +326,46 @@ def test_print_help_contains_recommended_paths(capsys):
     assert cli.print_help() == 0
     out = capsys.readouterr().out
     assert "te run help" in out
+    assert "te build help" in out
+    assert "te rebuild help" in out
     assert f"te log list {TIMESTAMP_EXAMPLE}" in out
-    assert "te summary LOG [--detailed]" in out
+    assert "te log watch" in out
     assert "旧测试入口" in out
+
+
+@pytest.mark.unit
+@pytest.mark.cli
+def test_route_named_build_command_uses_build_router():
+    with patch.object(cli, "route_build_named_command", return_value=0) as mock_route:
+        assert cli.route_named_command(["build", "py"]) == 0
+        mock_route.assert_called_once_with(["py"])
+
+
+@pytest.mark.unit
+@pytest.mark.cli
+def test_route_named_rebuild_command_uses_rebuild_router():
+    with patch.object(cli, "route_rebuild_named_command", return_value=0) as mock_route:
+        assert cli.route_named_command(["rebuild", "cpp"]) == 0
+        mock_route.assert_called_once_with(["cpp"])
+
+
+@pytest.mark.unit
+@pytest.mark.cli
+def test_print_legacy_help_real_function_executes_lines(capsys):
+    assert cli.print_legacy_help() == 0
+    out = capsys.readouterr().out
+    assert "te [简化参数组合]" in out
+    assert "编译构建" in out
+    assert "快速上手" not in out
+
+
+@pytest.mark.unit
+@pytest.mark.cli
+def test_route_named_help_old_uses_legacy_help(capsys):
+    assert cli.route_named_command(["help", "old"]) == 0
+    out = capsys.readouterr().out
+    assert "te [简化参数组合]" in out
+    assert "L0 C++ 单元测试" in out
 
 
 @pytest.mark.unit

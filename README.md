@@ -29,17 +29,23 @@ make install C=te
 
 ```bash
 te -h            # 查看完整帮助
+te help old      # 查看旧版参数风格帮助
 te --version     # 查看版本
 te --check-env   # 检查环境依赖
 te run help      # 查看测试帮助
 te log help      # 查看日志帮助
-te summary -h    # 查看 summary 帮助
+te build help    # 查看全量构建帮助
+te rebuild help  # 查看增量构建帮助
+te log watch     # 预留中的运行日志观看入口
+te sum help      # 查看摘要帮助
 
 # 推荐路径
 te run           # 交互式选择测试
 te log list      # 查看日志时间戳目录
 te log list 20260313_091738
-te summary /workspace/logs/20260313_091738/l0torch/L0_pytorch_unittest_nmz76.log
+te build help
+te rebuild help
+te sum /workspace/logs/20260313_091738/l0torch/L0_pytorch_unittest_nmz76.log
 
 # 测试
 te -0 -t         # L0 测试
@@ -50,16 +56,39 @@ te run l1torch   # L1 PyTorch 分布式测试
 te run all       # 一次启动三个测试
 
 # 构建
-te -b -c         # Python 构建
-te -b -t         # C++ 构建
+te build py      # Python 全量构建
+te rebuild py    # Python 增量构建
+te build cpp     # C++ 全量构建
+te rebuild cpp   # C++ 增量构建
+te build all     # Python + C++ 全量构建
+te rebuild all   # Python + C++ 增量重建
 
 # 任务/日志
 te -p            # 查看任务
 te log           # 查看日志帮助
 te log help      # 查看日志帮助
+te log watch     # 预留中的运行日志观看入口
 te log list      # 查看日志时间戳目录
 te log list 20260313_091738
 te log l0torch -n 5
+te sum help      # 查看摘要帮助
+te sum /workspace/logs/20260313_091738/l0torch/L0_pytorch_unittest_nmz76.log
+
+## 新旧命令映射
+
+| 旧命令 | 新命令 | 状态 |
+| --- | --- | --- |
+| `te -b -c -d` | `te build py` | 推荐使用新命令 |
+| `te -b -c` | `te rebuild py` | 推荐使用新命令 |
+| `te -b -t -d` | `te build cpp` | 推荐使用新命令 |
+| `te -b -t` | `te rebuild cpp` | 推荐使用新命令 |
+| `te -b -r -d` | `te build all` | 推荐使用新命令 |
+| `te -b -r` | `te rebuild all` | 推荐使用新命令 |
+| `te -0 -c` | `te run l0cpp` | 推荐使用新命令 |
+| `te -0 -t` | `te run l0torch` | 推荐使用新命令 |
+| `te -1 -t` | `te run l1torch` | 推荐使用新命令 |
+| `te -b ... -l` | `te log watch` | 新入口已预留，旧命令暂保留兼容 |
+| `te -b ... -k` | 旧命令暂保留兼容 | 后续再补显式命名 |
 ```
 
 ## 测试日志目录

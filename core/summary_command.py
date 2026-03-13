@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""te summary 子命令。"""
+"""te sum 子命令。"""
 
 import argparse
 import os
@@ -13,7 +13,7 @@ from .config_manager import TIMESTAMP_EXAMPLE
 
 
 def _parse_summary_args(argv: List[str]) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="te summary", add_help=False)
+    parser = argparse.ArgumentParser(prog="te sum", add_help=False)
     parser.add_argument("log_file", nargs="?")
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--brief", action="store_true")
@@ -23,12 +23,12 @@ def _parse_summary_args(argv: List[str]) -> argparse.Namespace:
 
 
 def print_summary_help() -> int:
-    """打印 te summary 帮助。"""
+    """打印 te sum 帮助。"""
     print(f"{GREEN}✅ TE 日志汇总命令{RESET}")
-    print(f"   {GREY}用法:{RESET} te summary <L0torch log abs path> [--brief|--detailed]")
+    print(f"   {GREY}用法:{RESET} te sum <L0torch log abs path> [--brief|--detailed]")
     print("")
     print(f"   {CYAN}输入:{RESET}")
-    print(f"     {YELLOW}te summary /workspace/logs/{TIMESTAMP_EXAMPLE}/l0torch/L0_pytorch_unittest_nmz76.log{RESET}")
+    print(f"     {YELLOW}te sum /workspace/logs/{TIMESTAMP_EXAMPLE}/l0torch/L0_pytorch_unittest_nmz76.log{RESET}")
     print("")
     print(f"   {CYAN}输出:{RESET}")
     print(f"     {YELLOW}/workspace/logs/{TIMESTAMP_EXAMPLE}/l0torch/L0torch_log_summary.md{RESET}")
@@ -36,9 +36,10 @@ def print_summary_help() -> int:
     print(f"   {CYAN}模式:{RESET}")
     print(f"     {YELLOW}--brief{RESET}              默认模式，只输出到二级标题")
     print(f"     {YELLOW}--detailed{RESET}           输出三级参数用例标题")
+    print(f"     {YELLOW}help{RESET}                 显示本帮助")
     print("")
     print(f"   {CYAN}最短示例:{RESET}")
-    print(f"     {YELLOW}te summary /workspace/logs/{TIMESTAMP_EXAMPLE}/l0torch/L0_pytorch_unittest_nmz76.log{RESET}")
+    print(f"     {YELLOW}te sum /workspace/logs/{TIMESTAMP_EXAMPLE}/l0torch/L0_pytorch_unittest_nmz76.log{RESET}")
     return 0
 
 
@@ -95,9 +96,9 @@ def generate_markdown_report(log_file_path: str, output_md_path: str, is_brief: 
 
 
 def route_summary_command(argv: List[str]) -> int:
-    """处理 te summary 子命令。"""
+    """处理 te sum 子命令。"""
     args = _parse_summary_args(argv)
-    if args.help or not args.log_file:
+    if args.help or args.log_file == "help" or not args.log_file:
         return print_summary_help()
 
     log_path = Path(args.log_file).expanduser()

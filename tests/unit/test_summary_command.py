@@ -40,6 +40,14 @@ def test_summary_help_shows_new_timestamp_example(capsys):
     assert "输入:" in out
     assert "输出:" in out
     assert "模式:" in out
+    assert "te sum " in out
+
+
+def test_summary_help_subcommand_shows_help(capsys):
+    assert summary_command.route_summary_command(["help"]) == 0
+    out = capsys.readouterr().out
+    assert "te sum " in out
+    assert "显示本帮助" in out
 
 
 def test_summary_detailed_mode_reports_mode(capsys, tmp_path):
