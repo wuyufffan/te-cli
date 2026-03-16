@@ -100,6 +100,7 @@ def build_run_env_map(test_sh_runs: List[Dict[str, str]], log_runs: List[Dict[st
 def _parse_summary_args(argv: List[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="te sum", add_help=False)
     parser.add_argument("log_file", nargs="?")
+    parser.add_argument("level", nargs="?", choices=("l1", "l2", "l3"), default="l2")
     parser.add_argument("-h", "--help", action="store_true")
     return parser.parse_args(argv)
 
@@ -107,7 +108,7 @@ def _parse_summary_args(argv: List[str]) -> argparse.Namespace:
 def print_summary_help() -> int:
     """打印 te sum 帮助。"""
     print(f"{GREEN}✅ TE 日志汇总命令{RESET}")
-    print(f"   {GREY}用法:{RESET} te sum <L0torch log abs path>")
+    print(f"   {GREY}用法:{RESET} te sum <L0torch log abs path> [l1|l2|l3]")
     print("")
     print(f"   {CYAN}输入:{RESET}")
     print(f"     {YELLOW}te sum /workspace/logs/{TIMESTAMP_EXAMPLE}/l0torch/L0_pytorch_unittest_nmz76.log{RESET}")
@@ -117,19 +118,25 @@ def print_summary_help() -> int:
     print("")
     print(f"   {CYAN}行为:{RESET}")
     print(f"     {YELLOW}按日志中的 pytest 实际运行顺序匹配 test.sh 环境变量{RESET}")
-    print(f"     {YELLOW}固定输出详细模式，包含三级参数用例标题{RESET}")
+    print(f"     {YELLOW}默认 l2：输出一级标题、二级标题和复现命令{RESET}")
+    print(f"     {YELLOW}l1{RESET}                   只输出一级标题")
+    print(f"     {YELLOW}l2{RESET}                   输出一级标题、二级标题和复现命令")
+    print(f"     {YELLOW}l3{RESET}                   输出完整内容，包含三级参数用例标题")
     print(f"     {YELLOW}help{RESET}                 显示本帮助")
     print("")
     print(f"   {CYAN}最短示例:{RESET}")
     print(f"     {YELLOW}te sum /workspace/logs/{TIMESTAMP_EXAMPLE}/l0torch/L0_pytorch_unittest_nmz76.log{RESET}")
+    print(f"     {YELLOW}te sum /workspace/logs/{TIMESTAMP_EXAMPLE}/l0torch/L0_pytorch_unittest_nmz76.log l1{RESET}")
     return 0
 
 
 def _is_supported_l0torch_log(log_path: Path) -> bool:
-    return log_path.is_file() and log_path.parent.name == "l0torch"
+    if not log_path.is_file():
+        return False
+    return log_path.parent.name == "l0torch" or log_path.name.startswith("L0_pytorch_unittest")
 
 
-def generate_markdown_report(log_file_path: str, output_md_path: str, log_run_env_map: Dict[int, str]) -> None:
+def generate_markdown_report(log_file_path: str, output_md_path: str, log_run_env_map: Dict[int, str], level: str) -> None:
     grouped_tests = defaultdict(list)
     group_lookup = {}
     pattern_test = re.compile(r"(?:FAILED|ERROR).*?((?:TransformerEngine/)?tests/[\w/-]+\.py)::(?:\w+::)?(test_\w+)(?:\[(.*?)\])?")
@@ -200,10 +207,19 @@ def generate_markdown_report(log_file_path: str, output_md_path: str, log_run_en
         output_handle.write("# 失败测试用例汇总报告\n\n")
         for file_index, file_path in enumerate(sorted_files, start=1):
             output_handle.write(f"# {file_index}. {file_path}\n\n")
+            if level == "l1":
+                continue
             for test_index, group in enumerate(grouped_tests[file_path], start=1):
                 base_test = group["base_test"]
                 env_prefix = group["env_prefix"]
                 output_handle.write(f"## {file_index}.{test_index} {base_test}\n\n")
+                if level == "l2":
+                    output_handle.write("**复现命令**:\n")
+                    if env_prefix:
+                        output_handle.write(f"```python\n{env_prefix} python3 -m pytest -v -s $TE_PATH/{base_test}\n```\n\n")
+                    else:
+                        output_handle.write(f"```python\npython3 -m pytest -v -s $TE_PATH/{base_test}\n```\n\n")
+                    continue
                 output_handle.write("**复现命令**:\n")
                 if env_prefix:
                     output_handle.write(f"```python\n{env_prefix} python3 -m pytest -v -s $TE_PATH/{base_test}\n```\n\n")
@@ -229,8 +245,8 @@ def route_summary_command(argv: List[str]) -> int:
     test_sh_runs = parse_test_runs_from_test_sh(DEFAULT_TEST_SH)
     log_runs = parse_log_runs(str(log_path))
     log_run_env_map = build_run_env_map(test_sh_runs, log_runs)
-    generate_markdown_report(str(log_path), str(output_path), log_run_env_map)
+    generate_markdown_report(str(log_path), str(output_path), log_run_env_map, args.level)
     print(f"{GREEN}✅ Summary 已生成{RESET}")
     print(f"   {GREY}└─ Output:{RESET} {output_path}")
-    print(f"   {GREY}└─ Mode:{RESET} detailed")
+    print(f"   {GREY}└─ Level:{RESET} {args.level}")
     return 0
