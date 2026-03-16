@@ -199,7 +199,13 @@ def _build_case_aliases(file_path: str, case: str) -> Set[str]:
 def collect_summary_data(log_file_path: str, log_run_env_map: Dict[int, str]) -> List[Dict[str, object]]:
     grouped_tests = defaultdict(list)
     group_lookup = {}
-    pattern_test = re.compile(r"(?:FAILED|ERROR).*?((?:TransformerEngine/)?tests/[\w/-]+\.py)::(?:\w+::)?(test_\w+)(?:\[(.*?)\])?")
+    pattern_test = re.compile(
+        r"(?:FAILED|ERROR).*?"
+        r"((?:TransformerEngine/)?tests/[\w/-]+\.py)"
+        r"::(?:(\w+)::)?"
+        r"(test_\w+)"
+        r"(?:\[(.*?)\])?"
+    )
     pattern_order = re.compile(r"Error in the following test cases:\s+(.*)")
     pattern_pytest = re.compile(
         r'^\+\s+python3\s+-m\s+pytest\b.*?(?:/|\\)(?P<path>(?:TransformerEngine/)?tests/[\w/-]+\.py)\b'
@@ -211,13 +217,14 @@ def collect_summary_data(log_file_path: str, log_run_env_map: Dict[int, str]) ->
     current_run_file = None
     run_has_failure_details = set()
 
-    def add_failure_entry(file_path: str, base_test: str, full_test: str, env_prefix: str) -> None:
-        group_key = (file_path, base_test, env_prefix)
+    def add_failure_entry(file_path: str, base_test: str, command_target: str, full_test: str, env_prefix: str) -> None:
+        group_key = (file_path, base_test, command_target, env_prefix)
         if group_key not in group_lookup:
             group_lookup[group_key] = len(grouped_tests[file_path])
             grouped_tests[file_path].append(
                 {
                     "base_test": base_test,
+                    "command_target": command_target,
                     "env_prefix": env_prefix,
                     "failed_cases": set(),
                 }
@@ -235,20 +242,22 @@ def collect_summary_data(log_file_path: str, log_run_env_map: Dict[int, str]) ->
                 match = pattern_test.search(line)
                 if match:
                     file_path = _normalize_log_test_path(match.group(1))
-                    test_func = match.group(2)
-                    params = match.group(3)
+                    class_name = match.group(2)
+                    test_func = match.group(3)
+                    params = match.group(4)
 
                     base_test = f"{file_path}::{test_func}"
+                    command_target = f"{file_path}::{class_name}::{test_func}" if class_name else base_test
                     full_test = f"{base_test}[{params}]" if params else base_test
                     env_prefix = log_run_env_map.get(current_run_line, "")
-                    add_failure_entry(file_path, base_test, full_test, env_prefix)
+                    add_failure_entry(file_path, base_test, command_target, full_test, env_prefix)
                     run_has_failure_details.add(current_run_line)
 
             test_fail_match = pattern_test_fail.match(line)
             if test_fail_match and current_run_line is not None and current_run_file is not None:
                 if current_run_line not in run_has_failure_details:
                     env_prefix = log_run_env_map.get(current_run_line, "")
-                    add_failure_entry(current_run_file, current_run_file, current_run_file, env_prefix)
+                    add_failure_entry(current_run_file, current_run_file, current_run_file, current_run_file, env_prefix)
 
             order_match = pattern_order.search(line)
             if order_match:
@@ -268,12 +277,13 @@ def collect_summary_data(log_file_path: str, log_run_env_map: Dict[int, str]) ->
         groups = []
         for group in grouped_tests[file_path]:
             base_test = group["base_test"]
+            command_target = group.get("command_target", base_test)
             env_prefix = group["env_prefix"]
             groups.append(
                 {
                     "base_test": base_test,
                     "env_prefix": env_prefix,
-                    "command": _build_repro_command(base_test, env_prefix),
+                    "command": _build_repro_command(command_target, env_prefix),
                     "failed_cases": sorted(group["failed_cases"]),
                 }
             )

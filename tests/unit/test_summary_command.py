@@ -357,8 +357,8 @@ def test_summary_matches_env_by_run_order(tmp_path, monkeypatch):
 
     assert summary_command.route_summary_command([str(log_file), "l3"]) == 0
     content = (log_dir / "L0torch_log_summary.md").read_text(encoding="utf-8")
-    assert "python3 -m pytest -v -s $TE_PATH/tests/pytorch/test_float8_current_scaling_exact.py::test_fp8_current_scaling_with_linear_module" in content
-    assert "NVTE_INT8_SIM_FP8=1 python3 -m pytest -v -s $TE_PATH/tests/pytorch/test_float8_current_scaling_exact.py::test_fp8_current_scaling_with_linear_module" not in content
+    assert "python3 -m pytest -v -s $TE_PATH/tests/pytorch/test_float8_current_scaling_exact.py::TestFP8CurrentScalingRecipeLinear::test_fp8_current_scaling_with_linear_module" in content
+    assert "NVTE_INT8_SIM_FP8=1 python3 -m pytest -v -s $TE_PATH/tests/pytorch/test_float8_current_scaling_exact.py::TestFP8CurrentScalingRecipeLinear::test_fp8_current_scaling_with_linear_module" not in content
 
 
 def test_summary_parses_class_based_failures(tmp_path):
@@ -379,7 +379,51 @@ def test_summary_parses_class_based_failures(tmp_path):
     assert summary_command.route_summary_command([str(log_file), "l3"]) == 0
     content = (log_dir / "L0torch_log_summary.md").read_text(encoding="utf-8")
     assert "## 1.1 tests/pytorch/test_fusible_ops.py::test_fp8_scale_update" in content
+    assert "python3 -m pytest -v -s $TE_PATH/tests/pytorch/test_fusible_ops.py::TestFuser::test_fp8_scale_update" in content
     assert "### 1.1.1 tests/pytorch/test_fusible_ops.py::test_fp8_scale_update[bf16]" in content
+
+
+def test_summary_recipe_command_preserves_class_node(tmp_path):
+    log_dir = tmp_path / "logs" / "20260312_120000" / "l0torch"
+    log_dir.mkdir(parents=True)
+    log_file = log_dir / "L0_pytorch_unittest_nmz76.log"
+    log_file.write_text(
+        textwrap.dedent(
+            """\
+            + python3 -m pytest -v -s --junitxml=/logs/pytest_test_recipe.xml /workspace/TransformerEngine/tests/pytorch/test_recipe.py
+            FAILED TransformerEngine/tests/pytorch/test_recipe.py::TestFP8Recipe::test_fp8_scale_update_with_linear_module[None-max-31]
+            Error in the following test cases: test_recipe.py
+            """
+        ),
+        encoding="utf-8",
+    )
+
+    assert summary_command.route_summary_command([str(log_file), "l3"]) == 0
+    content = (log_dir / "L0torch_log_summary.md").read_text(encoding="utf-8")
+    assert "## 1.1 tests/pytorch/test_recipe.py::test_fp8_scale_update_with_linear_module" in content
+    assert "python3 -m pytest -v -s $TE_PATH/tests/pytorch/test_recipe.py::TestFP8Recipe::test_fp8_scale_update_with_linear_module" in content
+
+
+def test_summary_keeps_distinct_command_targets_for_same_test_name_in_different_classes(tmp_path):
+    log_dir = tmp_path / "logs" / "20260312_120000" / "l0torch"
+    log_dir.mkdir(parents=True)
+    log_file = log_dir / "L0_pytorch_unittest_nmz76.log"
+    log_file.write_text(
+        textwrap.dedent(
+            """\
+            + python3 -m pytest -v -s --junitxml=/logs/pytest_test_fusible_ops.xml /workspace/TransformerEngine/tests/pytorch/test_fusible_ops.py
+            FAILED TransformerEngine/tests/pytorch/test_fusible_ops.py::TestBasicOps::test_linear[param_a]
+            FAILED TransformerEngine/tests/pytorch/test_fusible_ops.py::TestCheckpointing::test_linear[param_b]
+            Error in the following test cases: test_fusible_ops.py
+            """
+        ),
+        encoding="utf-8",
+    )
+
+    assert summary_command.route_summary_command([str(log_file), "l3"]) == 0
+    content = (log_dir / "L0torch_log_summary.md").read_text(encoding="utf-8")
+    assert "python3 -m pytest -v -s $TE_PATH/tests/pytorch/test_fusible_ops.py::TestBasicOps::test_linear" in content
+    assert "python3 -m pytest -v -s $TE_PATH/tests/pytorch/test_fusible_ops.py::TestCheckpointing::test_linear" in content
 
 
 def test_summary_reports_crash_only_file_failures(tmp_path, monkeypatch):
