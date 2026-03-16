@@ -48,6 +48,7 @@ te rebuild help
 te sum /workspace/logs/20260313_091738/l0torch/L0_pytorch_unittest_nmz76.log   # 默认 l2
 te sum /workspace/logs/20260313_091738/l0torch/L0_pytorch_unittest_nmz76.log l1
 te sum /workspace/logs/20260313_091738/l0torch/L0_pytorch_unittest_nmz76.log l3
+te sum /workspace/logs/20260313_091738/l0torch/L0_pytorch_unittest_nmz76.log test_sanity.py
 
 # 测试
 te -0 -t         # L0 测试
@@ -77,12 +78,14 @@ te sum help      # 查看摘要帮助
 te sum /workspace/logs/20260313_091738/l0torch/L0_pytorch_unittest_nmz76.log
 te sum /workspace/logs/20260313_091738/l0torch/L0_pytorch_unittest_nmz76.log l1
 te sum /workspace/logs/20260313_091738/l0torch/L0_pytorch_unittest_nmz76.log l3
+te sum /workspace/logs/20260313_091738/l0torch/L0_pytorch_unittest_nmz76.log test_sanity.py
 
 ## te sum 级别说明
 
-- `te sum LOG` 或 `te sum LOG l2`：输出一级标题、二级标题和复现命令
+- `te sum LOG` 或 `te sum LOG l2`：输出一级标题、二级标题，不显示复现命令
 - `te sum LOG l1`：只输出一级标题
-- `te sum LOG l3`：输出完整内容，包含三级参数用例标题
+- `te sum LOG l3`：输出完整内容，包含复现命令和三级参数用例标题
+- `te sum LOG keyword`：精确匹配一级/二级/三级标题的完整文本或常用别名，并按匹配层级裁剪输出
 - `te sum` 只支持 `l0torch` 目录日志或文件名以 `L0_pytorch_unittest` 开头的 L0 日志
 
 ## 新旧命令映射
