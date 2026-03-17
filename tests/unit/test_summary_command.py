@@ -51,6 +51,23 @@ def test_summary_accepts_l0_prefix_log_outside_l0torch_dir(tmp_path):
     assert output_file.is_file()
 
 
+def test_summary_accepts_recent_log_filename_alias(tmp_path, monkeypatch):
+    logs_root = tmp_path / "logs" / "20260312_120000" / "l0torch"
+    logs_root.mkdir(parents=True)
+    log_file = logs_root / "L0_pytorch_unittest_nmz76.log"
+    log_file.write_text(
+        "+ python3 -m pytest -v -s --junitxml=/logs/pytest_test_sanity.xml /workspace/TransformerEngine/tests/pytorch/test_sanity.py\n"
+        "FAILED tests/pytorch/test_sanity.py::test_sanity_drop_path\n"
+        "Error in the following test cases: test_sanity.py\n",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setenv("WORK_SPACE", str(tmp_path))
+    assert summary_command.route_summary_command(["L0_pytorch_unittest_nmz76.log"]) == 0
+    output_file = logs_root / "L0torch_log_summary.md"
+    assert output_file.is_file()
+
+
 def test_summary_help_shows_new_timestamp_example(capsys):
     assert summary_command.print_summary_help() == 0
     out = capsys.readouterr().out

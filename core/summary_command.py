@@ -163,6 +163,26 @@ def _is_supported_l0torch_log(log_path: Path) -> bool:
     return log_path.parent.name == "l0torch" or log_path.name.startswith("L0_pytorch_unittest")
 
 
+def _resolve_log_path(log_file: str) -> Path:
+    candidate = Path(log_file).expanduser()
+    if candidate.is_file():
+        return candidate
+
+    log_name = candidate.name
+    if not log_name:
+        return candidate
+
+    workspace_root = Path(os.environ.get("WORK_SPACE", "/workspace"))
+    logs_root = workspace_root / "logs"
+    if not logs_root.is_dir():
+        return candidate
+
+    matches = sorted(logs_root.glob(f"*/l0torch/{log_name}"), reverse=True)
+    if matches:
+        return matches[0]
+    return candidate
+
+
 def _build_repro_command(base_test: str, env_prefix: str) -> str:
     if env_prefix:
         return f"{env_prefix} python3 -m pytest -v -s $TE_PATH/{base_test}"
@@ -396,7 +416,7 @@ def route_summary_command(argv: List[str]) -> int:
     if args.help or args.log_file == "help" or not args.log_file:
         return print_summary_help()
 
-    log_path = Path(args.log_file).expanduser()
+    log_path = _resolve_log_path(args.log_file)
     if not _is_supported_l0torch_log(log_path):
         print(f"{RED}❌ 当前只支持 l0torch 日志: {log_path}{RESET}")
         return 1
