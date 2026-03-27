@@ -39,10 +39,11 @@ def print_run_help() -> int:
     print(f"   {CYAN}GPU 绑定:{RESET}")
     print(f"     {YELLOW}te run l0torch -g 3{RESET}   指定 GPU 运行")
     print("")
-    print(f"   {CYAN}兼容入口:{RESET}")
+    print(f"   {CYAN}兼容入口（逐步退出）:{RESET}")
     print(f"     {YELLOW}te -0 -c{RESET}            等价于 te run l0cpp")
     print(f"     {YELLOW}te -0 -t{RESET}            等价于 te run l0torch")
     print(f"     {YELLOW}te -1 -t{RESET}            等价于 te run l1torch")
+    print(f"     {GREY}旧的 -l / -k 组合已不再推荐，请改用 te log ...{RESET}")
     return 0
 
 

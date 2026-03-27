@@ -84,14 +84,14 @@ def _get_view_command(log_file: str) -> str:
     log_files = config.log_files
     
     if log_file == log_files["build_py"]:
-        return "te -b -c -l"
+        return "te log list | head -n 1"
     elif log_file == log_files["build_cpp"]:
-        return "te -b -t -l"
+        return "te log list | head -n 1"
     elif log_file == log_files["rebuild"]:
-        return "te -b -r -l"
+        return "te log list | head -n 1"
     elif log_file == log_files["build_all"]:
-        return "te -b -r -d -l"
-    return "te -b -c -l / te -b -t -l / te -b -r -l"
+        return "te log list | head -n 1"
+    return "te log list"
 
 
 def _print_build_task(pids: List[str], latest_log: str) -> None:
@@ -102,7 +102,7 @@ def _print_build_task(pids: List[str], latest_log: str) -> None:
     print(f"{CYAN}[Build Task]{RESET}")
     print(f"   {GREY}├─ PIDs:{RESET}  {RED}{pid_display}{RESET}")
     print(f"   {GREY}├─ View:{RESET}  {view_cmd}")
-    print(f"   {GREY}└─ Kill:{RESET}  {YELLOW}te -b -k{RESET}")
+    print(f"   {GREY}└─ Kill:{RESET}  {YELLOW}pkill -f 'python3 -m pip|cmake --build'{RESET}")
     print("")
 
 
@@ -112,8 +112,8 @@ def _print_test_task(pids: List[str], name: str, cmd_prefix: str) -> None:
     
     print(f"{CYAN}[{name}]{RESET}")
     print(f"   {GREY}├─ PIDs:{RESET}  {RED}{pid_display}{RESET}")
-    print(f"   {GREY}├─ View:{RESET}  {cmd_prefix} -l")
-    print(f"   {GREY}└─ Kill:{RESET}  {YELLOW}{cmd_prefix} -k{RESET}")
+    print(f"   {GREY}├─ View:{RESET}  te log list")
+    print(f"   {GREY}└─ Kill:{RESET}  {YELLOW}pkill -f '{cmd_prefix}'{RESET}")
     print("")
 
 

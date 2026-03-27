@@ -35,6 +35,54 @@ from .utils_helpers import check_te, view_log
 logger = logging.getLogger(__name__)
 
 
+LEGACY_COMPAT_MAPPINGS = {
+    ("-0", "-c"): "te run l0cpp",
+    ("-0", "-t"): "te run l0torch",
+    ("-1", "-t"): "te run l1torch",
+    ("-b", "-c"): "te rebuild py",
+    ("-b", "-t"): "te rebuild cpp",
+    ("-b", "-r"): "te rebuild all",
+}
+
+
+def _detect_legacy_compat_target(args: argparse.Namespace) -> Optional[str]:
+    if args.l0 and (args.core or args.cpp) and not (args.log or args.kill or args.delete):
+        return LEGACY_COMPAT_MAPPINGS[("-0", "-c")]
+    if args.l0 and args.test and not (args.log or args.kill or args.delete):
+        return LEGACY_COMPAT_MAPPINGS[("-0", "-t")]
+    if args.l1 and args.test and not (args.log or args.kill or args.delete):
+        return LEGACY_COMPAT_MAPPINGS[("-1", "-t")]
+    if args.build and args.core and not (args.log or args.kill or args.delete or args.rebuild):
+        return LEGACY_COMPAT_MAPPINGS[("-b", "-c")]
+    if args.build and args.test and not (args.log or args.kill or args.delete or args.rebuild):
+        return LEGACY_COMPAT_MAPPINGS[("-b", "-t")]
+    if args.build and args.rebuild and not (args.log or args.kill or args.delete):
+        return LEGACY_COMPAT_MAPPINGS[("-b", "-r")]
+    return None
+
+
+def _legacy_compat_message(target: str) -> None:
+    print(f"{YELLOW}⚠️  旧 flag 兼容入口将逐步退出，请改用: {target}{RESET}")
+
+
+def _legacy_compat_error(args: argparse.Namespace) -> bool:
+    legacy_like = args.build or args.l0 or args.l1
+    if not legacy_like:
+        return False
+
+    target = _detect_legacy_compat_target(args)
+    if target is not None:
+        _legacy_compat_message(target)
+        return False
+
+    if args.log or args.kill or args.delete:
+        print(f"{RED}❌ 旧 flag 的 -l / -k / -d 兼容入口已收缩，请改用命名式命令。{RESET}")
+        print(f"{GREY}示例: te log l0torch -n 1, te build py, te rebuild all{RESET}")
+        return True
+
+    return False
+
+
 def print_help() -> int:
     """打印帮助信息"""
     print(f"{GREEN}✅ TE 开发工具命令行 (TE CLI){RESET}")
@@ -51,12 +99,12 @@ def print_help() -> int:
     print(f"   {CYAN}子命令帮助:{RESET}")
     print(f"     {YELLOW}te run help{RESET}            查看测试运行帮助")
     print(f"     {YELLOW}te log help{RESET}            查看日志浏览帮助")
-    print(f"     {YELLOW}te log watch{RESET}           预留中的运行日志观看入口")
     print(f"     {YELLOW}te sum help{RESET}            查看摘要生成帮助")
     print("")
-    print(f"   {CYAN}兼容入口:{RESET}")
-    print(f"     {YELLOW}-0 -c{RESET} / {YELLOW}-0 -t{RESET} / {YELLOW}-1 -t{RESET}  旧测试入口")
-    print(f"     {YELLOW}-b -c{RESET} / {YELLOW}-b -t{RESET} / {YELLOW}-b -r{RESET}  旧构建入口")
+    print(f"   {CYAN}兼容入口（逐步退出）:{RESET}")
+    print(f"     {YELLOW}te -0 -c{RESET} / {YELLOW}te -0 -t{RESET} / {YELLOW}te -1 -t{RESET}")
+    print(f"     {YELLOW}te -b -c{RESET} / {YELLOW}te -b -t{RESET} / {YELLOW}te -b -r{RESET}")
+    print(f"     {GREY}更多旧 flag 仅保留在 te help old 中的迁移说明，不建议继续使用。{RESET}")
     print("")
     print(f"   {CYAN}状态与通用选项:{RESET}")
     print(f"     {YELLOW}-p{RESET} 查看任务  {YELLOW}-s{RESET} 查看状态  {YELLOW}--check-env{RESET} 检查环境")
@@ -69,39 +117,19 @@ def print_legacy_help() -> int:
     print(f"{GREEN}✅ TE 开发工具命令行 (TE CLI){RESET}")
     print(f"   {GREY}用法:{RESET} te [简化参数组合]")
     print("")
-    print(f"   {CYAN}编译构建:{RESET}")
-    print(f"     {YELLOW}-b -c{RESET}        编译 Python（增量）")
-    print(f"     {YELLOW}-b -c -d{RESET}     编译 Python（全量/clean）")
-    print(f"     {YELLOW}-b -c -l{RESET}     查看 Python 编译日志")
-    print(f"     {YELLOW}-b -t{RESET}        编译 C++ 测试（增量）")
-    print(f"     {YELLOW}-b -t -d{RESET}     清理并编译 C++ 测试")
-    print(f"     {YELLOW}-b -t -l{RESET}     查看 C++ 编译日志")
-    print(f"     {YELLOW}-b -r{RESET}        增量重建（Python + C++ 增量）")
-    print(f"     {YELLOW}-b -r -d{RESET}     全量重建（Python + C++ clean 重建）")
-    print(f"     {YELLOW}-b -r -l{RESET}     查看重建日志")
-    print(f"     {YELLOW}-b -k{RESET}        终止编译任务")
+    print(f"   {CYAN}仍保留的旧兼容入口:{RESET}")
+    print(f"     {YELLOW}-b -c{RESET}        等价于 te rebuild py")
+    print(f"     {YELLOW}-b -t{RESET}        等价于 te rebuild cpp")
+    print(f"     {YELLOW}-b -r{RESET}        等价于 te rebuild all")
     print("")
-    print(f"   {CYAN}测试运行:{RESET}")
-    print(f"     {YELLOW}-0 -c{RESET}        L0 C++ 单元测试")
-    print(f"     {YELLOW}-0 -c -l{RESET}     查看 L0 C++ 测试日志")
-    print(f"     {YELLOW}-0 -c -k{RESET}     终止 L0 C++ 测试")
-    print(f"     {YELLOW}-0 -t{RESET}        L0 PyTorch 单元测试")
-    print(f"     {YELLOW}-0 -t -l{RESET}     查看 L0 PyTorch 测试日志")
-    print(f"     {YELLOW}-0 -t -k{RESET}     终止 L0 PyTorch 测试")
-    print(f"     {YELLOW}-1 -t{RESET}        L1 PyTorch 分布式测试")
-    print(f"     {YELLOW}-1 -t -l{RESET}     查看 L1 测试日志")
-    print(f"     {YELLOW}-1 -t -k{RESET}     终止 L1 测试")
+    print(f"   {CYAN}仍保留的旧测试入口:{RESET}")
+    print(f"     {YELLOW}-0 -c{RESET}        等价于 te run l0cpp")
+    print(f"     {YELLOW}-0 -t{RESET}        等价于 te run l0torch")
+    print(f"     {YELLOW}-1 -t{RESET}        等价于 te run l1torch")
     print("")
-    print(f"   {CYAN}进程与状态:{RESET}")
-    print(f"     {YELLOW}-p{RESET}           查看所有运行中的任务")
-    print(f"     {YELLOW}-s{RESET}           深度检查 TE 环境状态")
-    print("")
-    print(f"   {CYAN}其他选项:{RESET}")
-    print(f"     {YELLOW}-g, --gpu{RESET}   指定运行的 GPU (例如 \"3\" 或 \"5,6\")")
-    print(f"     {YELLOW}-v{RESET}           显示版本信息")
-    print(f"     {YELLOW}--check-env{RESET}   检查环境依赖")
-    print(f"     {YELLOW}-V{RESET}           详细日志输出")
-    print(f"     {YELLOW}-h{RESET}           显示此帮助")
+    print(f"   {CYAN}迁移说明:{RESET}")
+    print(f"     {GREY}旧 flag 的 -l / -k / -d 组合不再建议继续使用，请改用 te log / te build / te rebuild。{RESET}")
+    print(f"     {GREY}例如: te log l0torch -n 1, te build py, te rebuild all{RESET}")
     return 0
 
 
@@ -307,6 +335,9 @@ def route_command(args: argparse.Namespace) -> int:
     # 环境状态
     if args.status:
         return check_te()
+
+    if _legacy_compat_error(args):
+        return 1
     
     # 构建相关
     if args.build:

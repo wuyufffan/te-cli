@@ -97,8 +97,8 @@ bash {config.te_path}/qa/L0_cppunittest/test.sh
         log_file=log_file,
         pattern="qa/L0_cppunittest/test.sh",
         task_name="L0 CPP Test",
-        view_cmd="te -0 -c -l",
-        kill_cmd="te -0 -c -k",
+        view_cmd="te log l0cpp -n 1",
+        kill_cmd="pkill -f 'qa/L0_cppunittest/test.sh'",
         script=script,
         success_message="L0 CPP Test Started",
     )
@@ -120,8 +120,8 @@ bash {config.te_path}/qa/L0_pytorch_unittest/test.sh
         log_file=log_file,
         pattern="qa/L0_pytorch_unittest/test.sh",
         task_name="L0 Torch Test",
-        view_cmd="te -0 -t -l",
-        kill_cmd="te -0 -t -k",
+        view_cmd="te log l0torch -n 1",
+        kill_cmd="pkill -f 'qa/L0_pytorch_unittest/test.sh'",
         script=script,
         success_message="L0 Torch Test Started",
     )
@@ -142,8 +142,8 @@ bash {config.te_path}/qa/L1_pytorch_distributed_unittest/test.sh
         log_file=log_file,
         pattern="qa/L1_pytorch_distributed_unittest/test.sh",
         task_name="L1 Torch Test",
-        view_cmd="te -1 -t -l",
-        kill_cmd="te -1 -t -k",
+        view_cmd="te log l1torch -n 1",
+        kill_cmd="pkill -f 'qa/L1_pytorch_distributed_unittest/test.sh'",
         script=script,
         success_message="L1 Distributed Test Started",
     )

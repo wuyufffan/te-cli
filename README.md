@@ -36,7 +36,6 @@ te run help      # 查看测试帮助
 te log help      # 查看日志帮助
 te build help    # 查看全量构建帮助
 te rebuild help  # 查看增量构建帮助
-te log watch     # 预留中的运行日志观看入口
 te sum help      # 查看摘要帮助
 
 # 推荐路径
@@ -51,8 +50,6 @@ te sum /workspace/logs/20260313_091738/l0torch/L0_pytorch_unittest_nmz76.log l3
 te sum /workspace/logs/20260313_091738/l0torch/L0_pytorch_unittest_nmz76.log test_sanity.py
 
 # 测试
-te -0 -t         # L0 测试
-te -1 -t         # L1 测试
 te run l0cpp     # L0 C++ 测试
 te run l0torch   # L0 PyTorch 测试
 te run l1torch   # L1 PyTorch 分布式测试
@@ -70,7 +67,6 @@ te rebuild all   # Python + C++ 增量重建
 te -p            # 查看任务
 te log           # 查看日志帮助
 te log help      # 查看日志帮助
-te log watch     # 预留中的运行日志观看入口
 te log list      # 查看日志时间戳目录
 te log list 20260313_091738
 te log l0torch -n 5
@@ -92,17 +88,14 @@ te sum /workspace/logs/20260313_091738/l0torch/L0_pytorch_unittest_nmz76.log tes
 
 | 旧命令 | 新命令 | 状态 |
 | --- | --- | --- |
-| `te -b -c -d` | `te build py` | 推荐使用新命令 |
 | `te -b -c` | `te rebuild py` | 推荐使用新命令 |
-| `te -b -t -d` | `te build cpp` | 推荐使用新命令 |
 | `te -b -t` | `te rebuild cpp` | 推荐使用新命令 |
-| `te -b -r -d` | `te build all` | 推荐使用新命令 |
 | `te -b -r` | `te rebuild all` | 推荐使用新命令 |
 | `te -0 -c` | `te run l0cpp` | 推荐使用新命令 |
 | `te -0 -t` | `te run l0torch` | 推荐使用新命令 |
 | `te -1 -t` | `te run l1torch` | 推荐使用新命令 |
-| `te -b ... -l` | `te log watch` | 新入口已预留，旧命令暂保留兼容 |
-| `te -b ... -k` | 旧命令暂保留兼容 | 后续再补显式命名 |
+
+说明：V1 起旧 flag 兼容层只保留以上 6 条常用入口；旧的 `-l`、`-k`、`-d` 组合不再作为正式接口，请改用 `te log ...`、`te build ...`、`te rebuild ...`。
 ```
 
 ## 测试日志目录
@@ -112,7 +105,7 @@ te sum /workspace/logs/20260313_091738/l0torch/L0_pytorch_unittest_nmz76.log tes
 - L0 PyTorch: `/workspace/logs/20260313_091738/l0torch/L0_pytorch_unittest_HOST.log`
 - L1 PyTorch: `/workspace/logs/20260313_091738/l1torch/L1_pytorch_distributed_unittest_HOST.log`
 
-旧命令 `te -0 -c`、`te -0 -t`、`te -1 -t` 仍可继续使用，`-l` 会自动打开对应类型最新一条日志。
+旧命令 `te -0 -c`、`te -0 -t`、`te -1 -t` 仍可继续使用，其余旧 flag 组合请迁移到命名式子命令。
 
 ## 配置
 

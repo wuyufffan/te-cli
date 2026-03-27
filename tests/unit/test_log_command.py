@@ -56,16 +56,15 @@ def test_log_help_alias(capsys):
     assert log_command.route_log_command(["help"]) == 0
     out = capsys.readouterr().out
     assert "te log help" in out
-    assert "te log watch" in out
+    assert "te log watch" not in out
     assert "查看某次运行" in out
     assert "兼容写法" in out
 
 
-def test_log_watch_placeholder(capsys):
-    assert log_command.route_log_command(["watch"]) == 0
+def test_log_watch_is_no_longer_supported(capsys):
+    assert log_command.route_log_command(["watch"]) == 1
     out = capsys.readouterr().out
-    assert "te log watch 入口已预留" in out
-    assert "自动检测正在运行的日志" in out
+    assert "未知日志目标" in out
 
 
 def test_log_unknown_target():

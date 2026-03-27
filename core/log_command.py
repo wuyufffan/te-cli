@@ -16,7 +16,6 @@ def print_log_help() -> int:
     print(f"   {CYAN}查看帮助:{RESET}")
     print(f"     {YELLOW}te log{RESET}                显示帮助")
     print(f"     {YELLOW}te log help{RESET}           显示帮助")
-    print(f"     {YELLOW}te log watch{RESET}          预留中的运行日志观看入口")
     print("")
     print(f"   {CYAN}列出时间戳目录:{RESET}")
     print(f"     {YELLOW}te log list{RESET}           列出最近日志时间戳目录")
@@ -51,12 +50,6 @@ def route_log_command(argv: List[str]) -> int:
 
     if args.help or args.target in (None, "help") or args.detail == "help":
         return print_log_help()
-
-    if args.target == "watch":
-        print(f"{GREEN}✅ te log watch 入口已预留{RESET}")
-        print(f"   {GREY}后续将自动检测正在运行的日志并引导选择观看对象。{RESET}")
-        print(f"   {GREY}当前请先使用 te log list / te log l0torch -n 5 等命令。{RESET}")
-        return 0
 
     if args.target == "list":
         if args.detail and TIMESTAMP_PATTERN.fullmatch(args.detail):

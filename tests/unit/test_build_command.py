@@ -49,7 +49,8 @@ def test_build_help_output(capsys):
     assert build_command.print_build_help() == 0
     out = capsys.readouterr().out
     assert "te build [help|py|cpp|all]" in out
-    assert "te -b -c -d" in out
+    assert "te -b -c -d" not in out
+    assert "仅保留 te -b -c / te -b -t / te -b -r" in out
 
 
 def test_rebuild_help_output(capsys):
@@ -57,3 +58,4 @@ def test_rebuild_help_output(capsys):
     out = capsys.readouterr().out
     assert "te rebuild [help|py|cpp|all]" in out
     assert "te -b -c" in out
+    assert "-d / -l / -k 组合已收缩" in out

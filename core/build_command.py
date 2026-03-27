@@ -25,13 +25,9 @@ def print_build_help() -> int:
     print(f"     {YELLOW}te build cpp{RESET}          清理后全量构建 C++ 测试")
     print(f"     {YELLOW}te build all{RESET}          全量构建 Python + C++")
     print("")
-    print(f"   {CYAN}兼容映射:{RESET}")
-    print(f"     {GREY}te -b -c -d{RESET}            等价于 te build py")
-    print(f"     {GREY}te -b -t -d{RESET}            等价于 te build cpp")
-    print(f"     {GREY}te -b -r -d{RESET}            等价于 te build all")
-    print("")
     print(f"   {CYAN}说明:{RESET}")
     print(f"     {GREY}增量构建请使用 te rebuild ...{RESET}")
+    print(f"     {GREY}旧 flag 兼容层仅保留 te -b -c / te -b -t / te -b -r 三条增量入口。{RESET}")
     return 0
 
 
@@ -52,6 +48,7 @@ def print_rebuild_help() -> int:
     print("")
     print(f"   {CYAN}说明:{RESET}")
     print(f"     {GREY}全量构建请使用 te build ...{RESET}")
+    print(f"     {GREY}旧 flag 的 -d / -l / -k 组合已收缩，不再作为正式接口。{RESET}")
     return 0
 
 
