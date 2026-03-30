@@ -72,11 +72,25 @@ def _start_test(
 
 
 def _conda_activation() -> str:
-    """生成 conda 环境激活脚本"""
-    return """
-if [ -f '/opt/miniconda3/etc/profile.d/conda.sh' ]; then
+    """生成测试环境激活脚本。
+
+    优先使用 TE 源码目录下的 .venv，避免把环境绑定到某个固定版本目录。
+    若仓库未提供 .venv，则回退到历史 conda 环境名称以兼容旧环境。
+    """
+    config = get_config()
+    te_venv_activate = Path(config.te_path) / ".venv" / "bin" / "activate"
+
+    return f"""
+if [ -f '{te_venv_activate}' ]; then
+    source '{te_venv_activate}'
+elif [ -f '/opt/miniconda3/etc/profile.d/conda.sh' ]; then
     source /opt/miniconda3/etc/profile.d/conda.sh
-    if conda env list | grep -q '^te27 '; then conda activate te27; fi
+    for env_name in te210 te27; do
+        if conda env list | grep -q "^${{env_name}} "; then
+            conda activate "$env_name"
+            break
+        fi
+    done
 fi
 """.strip()
 
@@ -134,6 +148,7 @@ def run_l1torch(gpu: Optional[str] = None, args: Optional[Iterable[str]] = None)
     
     gpu_export = f'export HIP_VISIBLE_DEVICES="{gpu}"\n' if gpu is not None else ""
     script = f"""
+{_conda_activation()}
 {gpu_export}export TE_PATH={config.te_path}
 bash {config.te_path}/qa/L1_pytorch_distributed_unittest/test.sh
 """

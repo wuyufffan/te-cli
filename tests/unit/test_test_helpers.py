@@ -42,6 +42,17 @@ def common_test_mocks(tmp_path):
 @pytest.mark.unit
 class TestTestOperations:
     """测试操作"""
+
+    def test_conda_activation_prefers_repo_venv(self, tmp_path):
+        te_root = tmp_path / "TransformerEngine"
+        te_root.mkdir()
+        cfg = Config(te_path=str(te_root), work_space=str(tmp_path))
+
+        with patch("core.test_helpers.get_config", return_value=cfg):
+            script = test_helpers._conda_activation()
+
+        assert f"source '{te_root}/.venv/bin/activate'" in script
+        assert "for env_name in te210 te27; do" in script
     
     def test_task_already_running(self):
         """任务已在运行时阻止"""
@@ -83,6 +94,7 @@ class TestTestOperations:
         else:
             script = call_args[1].get('args', ['', '', '', ''])[3]
         assert expected_script in script
+        assert f"source '{common_test_mocks['config'].te_path}/.venv/bin/activate'" in script
 
     @pytest.mark.parametrize("func,log_type", [
         (test_helpers.run_l0cpp, "l0cpp"),
